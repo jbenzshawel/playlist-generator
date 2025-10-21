@@ -1,11 +1,13 @@
 package httpclient
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"math"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"strconv"
 	"sync"
 	"time"
@@ -18,11 +20,13 @@ const (
 )
 
 type Client interface {
+	Get(ctx context.Context, endpoint string, options ...RequestOption) (*http.Response, error)
 	Do(req *http.Request) (*http.Response, error)
 }
 
 type retryingClient struct {
-	client *http.Client
+	client  *http.Client
+	baseURL *url.URL
 
 	lock sync.Mutex
 	rnd  *rand.Rand
@@ -32,15 +36,60 @@ type retryingClient struct {
 	maxWaitTime time.Duration
 }
 
+type Config struct {
+	BaseURL *url.URL
+}
+
 // NewRetryingClient creates a retryingClient with default settings.
-func NewRetryingClient() *retryingClient {
+func NewRetryingClient(cfg Config) *retryingClient {
 	return &retryingClient{
 		client:      &http.Client{Timeout: 10 * time.Second},
 		rnd:         rand.New(rand.NewSource(time.Now().UnixNano())),
+		baseURL:     cfg.BaseURL,
 		maxRetries:  defaultMaxRetries,
 		minWaitTime: defaultMinWaitTime,
 		maxWaitTime: defaultMaxWaitTime,
 	}
+}
+
+type RequestConfig struct {
+	queryParams map[string]string
+}
+
+type RequestOption func(*RequestConfig)
+
+func WithQuery(params map[string]string) RequestOption {
+	return func(cfg *RequestConfig) {
+		cfg.queryParams = params
+	}
+}
+
+func (c *retryingClient) Get(ctx context.Context, endpoint string, options ...RequestOption) (*http.Response, error) {
+	requestURL := c.baseURL.JoinPath(endpoint).String()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	cfg := &RequestConfig{}
+	for _, opt := range options {
+		opt(cfg)
+	}
+
+	q := req.URL.Query()
+
+	for k, v := range cfg.queryParams {
+		q.Add(k, v)
+	}
+
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
 
 func (c *retryingClient) Do(req *http.Request) (*http.Response, error) {
