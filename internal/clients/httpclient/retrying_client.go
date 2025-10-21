@@ -52,7 +52,10 @@ func (c *retryingClient) Do(req *http.Request) (*http.Response, error) {
 		wait := c.defaultWaitStrategy(attempt)
 
 		if err != nil {
-			slog.Warn("http request failed with network error", "error", err, "attempt", attempt, "wait", wait)
+			slog.Warn("http request failed with network error",
+				slog.Any("error", err),
+				slog.Int("attempt", attempt),
+			)
 			time.Sleep(wait)
 			continue
 		}
@@ -65,14 +68,18 @@ func (c *retryingClient) Do(req *http.Request) (*http.Response, error) {
 		resp.Body.Close()
 
 		if resp.StatusCode == http.StatusTooManyRequests {
-			wait := getRetryAfter(resp, wait)
-			slog.Warn("http request failed with too many requests", "attempt", attempt, "wait", wait)
+			wait = getRetryAfter(resp, wait)
+			slog.Warn("http request failed with too many requests",
+				slog.Int("attempt", attempt),
+			)
 			time.Sleep(wait)
 			continue
 		}
 
 		if resp.StatusCode >= http.StatusInternalServerError && resp.StatusCode != http.StatusNotImplemented {
-			slog.Warn("http request failed with internal server error", "attempt", attempt, "wait", wait)
+			slog.Warn("http request failed with internal server error",
+				slog.Int("attempt", attempt),
+			)
 			time.Sleep(wait)
 			continue
 		}
