@@ -96,11 +96,10 @@ func (c *retryingClient) Get(ctx context.Context, endpoint string, options ...Re
 	req.URL.RawQuery = q.Encode()
 
 	if c.auth != nil {
-		token, err := c.auth.GetToken(ctx, c)
+		req, err = c.addAuthHeader(ctx, req)
 		if err != nil {
 			return nil, err
 		}
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	}
 
 	resp, err := c.Do(req)
@@ -108,6 +107,15 @@ func (c *retryingClient) Get(ctx context.Context, endpoint string, options ...Re
 		return nil, err
 	}
 	return resp, nil
+}
+
+func (c *retryingClient) addAuthHeader(ctx context.Context, req *http.Request) (*http.Request, error) {
+	token, err := c.auth.GetToken(ctx, c)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	return req, nil
 }
 
 func (c *retryingClient) Do(req *http.Request) (*http.Response, error) {

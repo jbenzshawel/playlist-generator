@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
@@ -38,10 +39,6 @@ func NewSong(artist, track, album, upc string) (Song, error) {
 	}, nil
 }
 
-func (s Song) IsZero() bool {
-	return s == Song{}
-}
-
 func (s Song) ID() uuid.UUID {
 	return s.id
 }
@@ -68,4 +65,12 @@ func (s Song) SongHash() string {
 
 func (s Song) Created() time.Time {
 	return s.created
+}
+
+func (s Song) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.String("artist", s.Artist()),
+		slog.String("track", s.Track()),
+		slog.String("album", s.Album()),
+	)
 }

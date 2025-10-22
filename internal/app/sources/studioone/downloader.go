@@ -16,23 +16,23 @@ type Downloader interface {
 	DownloadSongList(ctx context.Context, date string) error
 }
 
-type provider interface {
+type queryer interface {
 	GetSongs(ctx context.Context, date string) (Collection, error)
 }
 
 type downloader struct {
-	provider           provider
+	queryer            queryer
 	songRepository     domain.SongRepository
 	pubRadioRepository domain.PublicRadioRepository
 }
 
 func NewDownloader(
-	provider provider,
+	provider queryer,
 	songRepository domain.SongRepository,
 	pubRadioRepository domain.PublicRadioRepository,
 ) *downloader {
 	return &downloader{
-		provider:           provider,
+		queryer:            provider,
 		songRepository:     songRepository,
 		pubRadioRepository: pubRadioRepository,
 	}
@@ -40,7 +40,7 @@ func NewDownloader(
 
 func (d *downloader) DownloadSongList(ctx context.Context, date string) error {
 	slog.Info("downloading studio one songs", slog.Any("date", date))
-	collection, err := d.provider.GetSongs(ctx, date)
+	collection, err := d.queryer.GetSongs(ctx, date)
 	if err != nil {
 		return err
 	}
@@ -86,21 +86,6 @@ func (d *downloader) DownloadSongList(ctx context.Context, date string) error {
 	if err != nil {
 		return err
 	}
-
-	// TODO: switch to https://github.com/mattn/go-sqlite3
-	// to fix concurrency?
-	//g, ctx := errgroup.WithContext(ctx)
-	//g.Go(func() error {
-	//	return d.songRepository.BulkInsert(ctx, songs)
-	//})
-	//g.Go(func() error {
-	//	return d.pubRadioRepository.BulkInsert(ctx, pubRadioSongs)
-	//})
-	//
-	//err = g.Wait()
-	//if err != nil {
-	//	return err
-	//}
 
 	return nil
 }
