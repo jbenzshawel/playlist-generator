@@ -1,9 +1,8 @@
 package main
 
 import (
+	"github.com/jbenzshawel/playlist-generator/internal/app/config"
 	"log/slog"
-
-	"github.com/jbenzshawel/playlist-generator/internal/config"
 )
 
 func main() {

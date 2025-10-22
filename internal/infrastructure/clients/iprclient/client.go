@@ -2,7 +2,8 @@ package iprclient
 
 import (
 	"context"
-	"github.com/jbenzshawel/playlist-generator/internal/clients/httpclient"
+	"github.com/jbenzshawel/playlist-generator/internal/app/sources/studioone"
+	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient"
 	"net/url"
 )
 
@@ -22,20 +23,20 @@ func New(cfg Config) *client {
 	}
 }
 
-func (c *client) GetSongs(ctx context.Context, date string) (Collection, error) {
+func (c *client) GetSongs(ctx context.Context, date string) (studioone.Collection, error) {
 	resp, err := c.Get(ctx, "/day", httpclient.WithQuery(map[string]string{
 		"format": "json",
 		"date":   date,
 	}))
 	if err != nil {
-		return Collection{}, err
+		return studioone.Collection{}, err
 	}
 
 	defer resp.Body.Close()
 
-	collection, err := httpclient.DecodeJSON[Collection](resp)
+	collection, err := httpclient.DecodeJSON[studioone.Collection](resp)
 	if err != nil {
-		return Collection{}, err
+		return studioone.Collection{}, err
 	}
 
 	return collection, nil

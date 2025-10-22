@@ -1,4 +1,4 @@
-package iprclient
+package studioone
 
 type Collection struct {
 	Items []Item `json:"onToday"`
@@ -26,4 +26,5 @@ type Song struct {
 	Track   string `json:"trackName"`
 	Album   string `json:"collectionName"`
 	EndTime string `json:"_end_time"`
+	UPC     string `json:"upc"`
 }
