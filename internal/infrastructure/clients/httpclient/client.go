@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient/auth"
 )
 
 const (
@@ -27,6 +29,7 @@ type Client interface {
 type retryingClient struct {
 	client  *http.Client
 	baseURL *url.URL
+	auth    *auth.TokenGetter
 
 	lock sync.Mutex
 	rnd  *rand.Rand
@@ -38,11 +41,12 @@ type retryingClient struct {
 
 type Config struct {
 	BaseURL *url.URL
+	Auth    *auth.Config
 }
 
 // NewRetryingClient creates a retryingClient with default settings.
 func NewRetryingClient(cfg Config) *retryingClient {
-	return &retryingClient{
+	c := &retryingClient{
 		client:      &http.Client{Timeout: 10 * time.Second},
 		rnd:         rand.New(rand.NewSource(time.Now().UnixNano())),
 		baseURL:     cfg.BaseURL,
@@ -50,6 +54,12 @@ func NewRetryingClient(cfg Config) *retryingClient {
 		minWaitTime: defaultMinWaitTime,
 		maxWaitTime: defaultMaxWaitTime,
 	}
+
+	if cfg.Auth != nil {
+		c.auth = &auth.TokenGetter{Cfg: *cfg.Auth}
+	}
+
+	return c
 }
 
 type RequestConfig struct {
@@ -84,6 +94,14 @@ func (c *retryingClient) Get(ctx context.Context, endpoint string, options ...Re
 	}
 
 	req.URL.RawQuery = q.Encode()
+
+	if c.auth != nil {
+		token, err := c.auth.GetToken(ctx, c)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	}
 
 	resp, err := c.Do(req)
 	if err != nil {

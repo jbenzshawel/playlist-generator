@@ -2,9 +2,11 @@ package iprclient
 
 import (
 	"context"
+	"net/url"
+
 	"github.com/jbenzshawel/playlist-generator/internal/app/sources/studioone"
 	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient"
-	"net/url"
+	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient/decode"
 )
 
 type Config struct {
@@ -34,7 +36,7 @@ func (c *client) GetSongs(ctx context.Context, date string) (studioone.Collectio
 
 	defer resp.Body.Close()
 
-	collection, err := httpclient.DecodeJSON[studioone.Collection](resp)
+	collection, err := decode.JSON[studioone.Collection](resp)
 	if err != nil {
 		return studioone.Collection{}, err
 	}

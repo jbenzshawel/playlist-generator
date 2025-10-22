@@ -1,4 +1,4 @@
-package httpclient
+package decode
 
 import (
 	"encoding/json"
@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func DecodeJSON[T any](resp *http.Response) (T, error) {
+func JSON[T any](resp *http.Response) (T, error) {
 	var zero T
 
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
