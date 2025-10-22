@@ -45,8 +45,20 @@ func (s spotifyTrackProvider) GetTrack(ctx context.Context, song domain.Song) (d
 }
 
 type match struct {
-	track        domain.SpotifyTrack
-	percentMatch float64
+	track              domain.SpotifyTrack
+	artistPercentMatch float64
+	trackPercentMatch  float64
+	albumPercentMatch  float64
+}
+
+func (m match) weightedAverage() float64 {
+	var (
+		weightArtist = 0.35
+		weightTrack  = 0.40
+		weightAlbum  = 0.25
+	)
+
+	return m.artistPercentMatch*weightArtist + m.trackPercentMatch*weightTrack + m.albumPercentMatch*weightAlbum
 }
 
 func findTrackFromResult(tracks TrackCollection, song domain.Song) (domain.SpotifyTrack, error) {
@@ -61,31 +73,30 @@ func findTrackFromResult(tracks TrackCollection, song domain.Song) (domain.Spoti
 	var matches []match
 
 	for _, t := range tracks.Items {
-		percentArtMatch := percentArtistMatch(t.Artists, song.Artist())
-
-		percentAlbumMatch := compare.StringSimilarity(song.Album(), t.Album.Name)
 
 		matches = append(matches, match{
-			percentMatch: (percentArtMatch + percentAlbumMatch) / 2,
-			track:        domain.NewSpotifyTrack(song.SongHash(), t.ID, t.URI),
+			track:              domain.NewSpotifyTrack(song.SongHash(), t.ID, t.URI),
+			trackPercentMatch:  compare.StringSimilarity(song.Track(), t.Name),
+			artistPercentMatch: percentArtistMatch(t.Artists, song.Artist()),
+			albumPercentMatch:  compare.StringSimilarity(song.Album(), t.Album.Name),
 		})
 	}
 
 	slices.SortFunc(matches, func(a, b match) int {
-		if a.percentMatch < b.percentMatch {
+		if a.weightedAverage() < b.weightedAverage() {
 			return 1
 		}
-		if a.percentMatch > b.percentMatch {
+		if a.weightedAverage() > b.weightedAverage() {
 			return -1
 		}
 		return 0
 	})
 
-	if len(matches) == 0 {
+	if len(matches) == 0 || matches[0].weightedAverage() < 60 {
 		return domain.SpotifyTrack{}, errors.New("no matches")
 	}
 
-	slog.Info("partial match track found", slog.Any("percent", matches[0].percentMatch))
+	slog.Info("partial match track found", slog.Any("percent", matches[0].weightedAverage()))
 
 	return matches[0].track, nil
 }
@@ -105,8 +116,4 @@ func percentArtistMatch(artists []Artist, artist string) float64 {
 	slices.Sort(matches)
 
 	return matches[len(matches)-1]
-}
-
-func percentStringMatch(orig, alt string) float64 {
-	return compare.StringSimilarity(orig, alt)
 }
