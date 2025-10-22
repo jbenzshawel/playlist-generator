@@ -1,13 +1,14 @@
 package domain
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 type SongRepository interface {
-	BulkInsert(song []Song) error
+	BulkInsert(ctx context.Context, songs []Song) error
 }
 
 type Song struct {

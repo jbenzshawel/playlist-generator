@@ -5,8 +5,6 @@ import (
 	"log/slog"
 	"time"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
 
@@ -14,24 +12,34 @@ const (
 	timeLayout = "01-02-2006 15:04:05"
 )
 
-type Provider interface {
+type Downloader interface {
+	DownloadSongList(ctx context.Context, date string) error
+}
+
+type provider interface {
 	GetSongs(ctx context.Context, date string) (Collection, error)
 }
 
 type downloader struct {
-	provider               Provider
-	songRepository         domain.SongRepository
-	pubRadioSongRepository domain.PublicSongRepository
+	provider           provider
+	songRepository     domain.SongRepository
+	pubRadioRepository domain.PublicRadioRepository
 }
 
-func NewDownloader(provider Provider, songRepository domain.SongRepository) *downloader {
+func NewDownloader(
+	provider provider,
+	songRepository domain.SongRepository,
+	pubRadioRepository domain.PublicRadioRepository,
+) *downloader {
 	return &downloader{
-		provider:       provider,
-		songRepository: songRepository,
+		provider:           provider,
+		songRepository:     songRepository,
+		pubRadioRepository: pubRadioRepository,
 	}
 }
 
 func (d *downloader) DownloadSongList(ctx context.Context, date string) error {
+	slog.Info("downloading studio one songs", slog.Any("date", date))
 	collection, err := d.provider.GetSongs(ctx, date)
 	if err != nil {
 		return err
@@ -67,18 +75,32 @@ func (d *downloader) DownloadSongList(ctx context.Context, date string) error {
 		}
 	}
 
-	g, ctx := errgroup.WithContext(ctx)
-	g.Go(func() error {
-		return d.songRepository.BulkInsert(songs)
-	})
-	g.Go(func() error {
-		return d.pubRadioSongRepository.BulkInsert(pubRadioSongs)
-	})
+	slog.Info("found songs", slog.Int("count", len(songs)))
 
-	err = g.Wait()
+	err = d.songRepository.BulkInsert(ctx, songs)
 	if err != nil {
 		return err
 	}
+
+	err = d.pubRadioRepository.BulkInsert(ctx, pubRadioSongs)
+	if err != nil {
+		return err
+	}
+
+	// TODO: switch to https://github.com/mattn/go-sqlite3
+	// to fix concurrency?
+	//g, ctx := errgroup.WithContext(ctx)
+	//g.Go(func() error {
+	//	return d.songRepository.BulkInsert(ctx, songs)
+	//})
+	//g.Go(func() error {
+	//	return d.pubRadioRepository.BulkInsert(ctx, pubRadioSongs)
+	//})
+	//
+	//err = g.Wait()
+	//if err != nil {
+	//	return err
+	//}
 
 	return nil
 }

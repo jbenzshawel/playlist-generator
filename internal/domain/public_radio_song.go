@@ -1,9 +1,12 @@
 package domain
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
-type PublicSongRepository interface {
-	BulkInsert(song []PublicRadioSong) error
+type PublicRadioRepository interface {
+	BulkInsert(ctx context.Context, songs []PublicRadioSong) error
 }
 
 type PublicRadioSong struct {
