@@ -5,9 +5,17 @@ import (
 	"errors"
 	"log/slog"
 	"slices"
+	"strings"
 
 	"github.com/jbenzshawel/playlist-generator/internal/common/compare"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
+)
+
+const minMatchPercent = 70.0
+
+var (
+	errTrackNotFound       = errors.New("track not found")
+	errMatchBelowThreshold = errors.New("match below threshold")
 )
 
 type trackSearcher interface {
@@ -19,9 +27,7 @@ type spotifyTrackProvider struct {
 }
 
 func (s spotifyTrackProvider) GetTrack(ctx context.Context, song domain.Song) (domain.SpotifyTrack, error) {
-	// TODO: It'd be nice if we also populated ISRC info from spotify in the song db
-
-	resp, err := s.searcher.SearchTrack(ctx, song.Track(), song.Artist(), song.Album())
+	resp, err := s.searcher.SearchTrack(ctx, song.Artist(), song.Track(), song.Album())
 	if err != nil {
 		return domain.SpotifyTrack{}, err
 	}
@@ -32,7 +38,7 @@ func (s spotifyTrackProvider) GetTrack(ctx context.Context, song domain.Song) (d
 
 	slog.Info("track not found with album query param; searching without album", slog.Any("song", song))
 
-	resp, err = s.searcher.SearchTrack(ctx, song.Track(), song.Artist(), "")
+	resp, err = s.searcher.SearchTrack(ctx, song.Artist(), song.Track(), "")
 	if err != nil {
 		return domain.SpotifyTrack{}, err
 	}
@@ -41,7 +47,7 @@ func (s spotifyTrackProvider) GetTrack(ctx context.Context, song domain.Song) (d
 		return findTrackFromResult(resp.Tracks, song)
 	}
 
-	return domain.SpotifyTrack{}, errors.New("track not found") // TODO: custom error?
+	return domain.SpotifyTrack{}, errTrackNotFound
 }
 
 type match struct {
@@ -49,6 +55,12 @@ type match struct {
 	artistPercentMatch float64
 	trackPercentMatch  float64
 	albumPercentMatch  float64
+}
+
+func (m match) isExactMatch() bool {
+	return m.trackPercentMatch == 100 &&
+		m.artistPercentMatch == 100 &&
+		m.albumPercentMatch == 100
 }
 
 func (m match) weightedAverage() float64 {
@@ -65,7 +77,6 @@ func findTrackFromResult(tracks TrackCollection, song domain.Song) (domain.Spoti
 	slog.Info("spotify search tracks found", slog.Int("count", tracks.Total))
 
 	if tracks.Total == 1 {
-		// Wohoo! Exact match
 		t := tracks.Items[0]
 		return domain.NewSpotifyTrack(song.SongHash(), t.ID, t.URI), nil
 	}
@@ -73,13 +84,18 @@ func findTrackFromResult(tracks TrackCollection, song domain.Song) (domain.Spoti
 	var matches []match
 
 	for _, t := range tracks.Items {
-
-		matches = append(matches, match{
+		m := match{
 			track:              domain.NewSpotifyTrack(song.SongHash(), t.ID, t.URI),
-			trackPercentMatch:  compare.StringSimilarity(song.Track(), t.Name),
+			trackPercentMatch:  stringSimilarity(song.Track(), t.Name),
 			artistPercentMatch: percentArtistMatch(t.Artists, song.Artist()),
-			albumPercentMatch:  compare.StringSimilarity(song.Album(), t.Album.Name),
-		})
+			albumPercentMatch:  percentAlbumMatch(t.Album, song),
+		}
+
+		if m.isExactMatch() {
+			return m.track, nil
+		}
+
+		matches = append(matches, m)
 	}
 
 	slices.SortFunc(matches, func(a, b match) int {
@@ -92,8 +108,8 @@ func findTrackFromResult(tracks TrackCollection, song domain.Song) (domain.Spoti
 		return 0
 	})
 
-	if len(matches) == 0 || matches[0].weightedAverage() < 60 {
-		return domain.SpotifyTrack{}, errors.New("no matches")
+	if len(matches) == 0 || matches[0].weightedAverage() < minMatchPercent {
+		return domain.SpotifyTrack{}, errMatchBelowThreshold
 	}
 
 	slog.Info("partial match track found", slog.Any("percent", matches[0].weightedAverage()))
@@ -101,19 +117,31 @@ func findTrackFromResult(tracks TrackCollection, song domain.Song) (domain.Spoti
 	return matches[0].track, nil
 }
 
-func percentArtistMatch(artists []Artist, artist string) float64 {
-	if len(artists) == 1 {
-		return compare.StringSimilarity(artist, artists[0].Name)
+func percentAlbumMatch(trackAlbum Album, song domain.Song) float64 {
+	if trackAlbum.AlbumType == SingleAlbumType && strings.HasPrefix(song.Album(), song.Track()) {
+		return 100.0
 	}
 
-	// still need to figure out how source handles multiple artists
+	return stringSimilarity(song.Album(), trackAlbum.Name)
+}
+
+func percentArtistMatch(artists []Artist, artist string) float64 {
+	if len(artists) == 1 {
+		return stringSimilarity(artist, artists[0].Name)
+	}
+
+	// TODO: still need to figure out how source handles multiple artists
 	// for now just pick the highest?
 	var matches []float64
 	for _, a := range artists {
-		matches = append(matches, compare.StringSimilarity(artist, a.Name))
+		matches = append(matches, stringSimilarity(artist, a.Name))
 	}
 
 	slices.Sort(matches)
 
 	return matches[len(matches)-1]
+}
+
+func stringSimilarity(s1, s2 string) float64 {
+	return compare.StringSimilarity(strings.ToLower(s1), strings.ToLower(s2))
 }
