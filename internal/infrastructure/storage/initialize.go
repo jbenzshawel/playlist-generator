@@ -11,7 +11,7 @@ func InitializeSchema(ctx context.Context, db *sql.DB) error {
 		return err
 	}
 
-	_, err = db.ExecContext(ctx, publicRadioSongSchema)
+	_, err = db.ExecContext(ctx, studioOneSongSchema)
 	if err != nil {
 		return err
 	}
