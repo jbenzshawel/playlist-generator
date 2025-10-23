@@ -10,9 +10,9 @@ import (
 
 var _ domain.StudioOneRepository = (*StudioOneSqlRepository)(nil)
 
-var publicRadioSongSchema string = `CREATE TABLE IF NOT EXISTS studio_one_source (
+var studioOneSongSchema string = `CREATE TABLE IF NOT EXISTS studio_one_source (
     id TEXT PRIMARY KEY,
-    song_hash TEXT NOT NULL UNIQUE,
+    song_hash TEXT NOT NULL,
     programName TEXT,
     datePlayed TEXT NOT NULL,
     end_time TEXT NOT NULL,         -- store timestamps as ISO8601 strings (UTC)

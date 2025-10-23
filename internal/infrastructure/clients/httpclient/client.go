@@ -1,7 +1,9 @@
 package httpclient
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"math"
@@ -21,6 +23,7 @@ const (
 
 type Client interface {
 	Get(ctx context.Context, endpoint string, options ...RequestOption) (*http.Response, error)
+	Post(ctx context.Context, endpoint string, options ...RequestOption) (*http.Response, error)
 	Do(req *http.Request) (*http.Response, error)
 }
 
@@ -62,6 +65,7 @@ func NewRetryingClient(cfg Config) *retryingClient {
 
 type RequestConfig struct {
 	queryParams map[string]string
+	jsonBody    any
 }
 
 type RequestOption func(*RequestConfig)
@@ -69,6 +73,12 @@ type RequestOption func(*RequestConfig)
 func WithQuery(params map[string]string) RequestOption {
 	return func(cfg *RequestConfig) {
 		cfg.queryParams = params
+	}
+}
+
+func WithJSONBody(b any) RequestOption {
+	return func(cfg *RequestConfig) {
+		cfg.jsonBody = b
 	}
 }
 
@@ -97,6 +107,33 @@ func (c *retryingClient) Get(ctx context.Context, endpoint string, options ...Re
 	if err != nil {
 		return nil, err
 	}
+
+	return resp, nil
+}
+
+func (c *retryingClient) Post(ctx context.Context, endpoint string, options ...RequestOption) (*http.Response, error) {
+	requestURL := c.baseURL.JoinPath(endpoint).String()
+
+	cfg := &RequestConfig{}
+	for _, opt := range options {
+		opt(cfg)
+	}
+
+	bodyJSON, err := json.Marshal(cfg.jsonBody)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, requestURL, bytes.NewBuffer(bodyJSON))
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
 	return resp, nil
 }
 
