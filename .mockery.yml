@@ -1,0 +1,11 @@
+all: false
+recursive: false
+template: testify
+log-level: info
+force-file-write: true
+dir: "{{.InterfaceDir}}"
+filename: "mocks_test.go"
+packages:
+  github.com/jbenzshawel/playlist-generator/internal/app/playlists/spotify:
+    interfaces:
+      trackSearcher:

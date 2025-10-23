@@ -15,7 +15,7 @@ func TestNewSong(t *testing.T) {
 		upc    = "upc"
 	)
 
-	expectedHash, err := NewSongHash(artist, track, album)
+	expectedHash, err := newSongHash(artist, track, album)
 	require.NoError(t, err)
 
 	actual, err := NewSong(artist, track, album, upc)
