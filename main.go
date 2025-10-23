@@ -13,6 +13,7 @@ import (
 
 	_ "modernc.org/sqlite"
 
+	"github.com/jbenzshawel/playlist-generator/internal/app/playlists/spotify"
 	"github.com/jbenzshawel/playlist-generator/internal/app/sources/studioone"
 	"github.com/jbenzshawel/playlist-generator/internal/config"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
@@ -54,7 +55,7 @@ func main() {
 		}
 	}()
 
-	setupSpotifyClient(cfg)
+	spotifyClient := setupSpotifyClient(cfg)
 
 	repos := newRepositories(db)
 	sources := newSources(cfg, repos)
@@ -63,9 +64,12 @@ func main() {
 	if err != nil {
 		slog.Error("studio one download song list error", slog.Any("error", err))
 	}
+
+	// TODO: Run in background?
+	err = spotify.NewTrackUpdater(spotifyClient, repos.spotifyTracks).UpdateSpotifyTracks(ctx)
 }
 
-func setupSpotifyClient(cfg config.Config) {
+func setupSpotifyClient(cfg config.Config) *spotifyclient.Client {
 	// TODO: conditionally get auth code depending on mode
 	// May have configuration mode that runs in background downloading song lists
 	// and populating them with spotify metadata
@@ -100,22 +104,23 @@ func setupSpotifyClient(cfg config.Config) {
 		panic(fmt.Errorf("failed to parse SpotifyClient.BaseURL: %w", err))
 	}
 
-	// TODO: Pass client where its needed
-	_ = spotifyclient.New(spotifyclient.Config{
+	return spotifyclient.New(spotifyclient.Config{
 		BaseURL: spotifyClientBaseURL,
 		Client:  spotifyOAuthClient,
 	})
 }
 
 type repositories struct {
-	songs     domain.SongRepository
-	studioOne domain.StudioOneRepository
+	songs         domain.SongRepository
+	studioOne     domain.StudioOneRepository
+	spotifyTracks domain.SpotifyTrackRepository
 }
 
 func newRepositories(db *sql.DB) repositories {
 	return repositories{
-		songs:     storage.NewSongSqlRepository(db),
-		studioOne: storage.NewStudioOneSqlRepository(db),
+		songs:         storage.NewSongSqlRepository(db),
+		studioOne:     storage.NewStudioOneSqlRepository(db),
+		spotifyTracks: storage.NewSpotifyTracksSqlRepository(db),
 	}
 }
 

@@ -1,8 +1,9 @@
-package spotify
+package providers
 
 import (
 	"context"
 	"errors"
+	"github.com/jbenzshawel/playlist-generator/internal/app/playlists/spotify"
 	"log/slog"
 	"slices"
 	"strings"
@@ -18,15 +19,21 @@ var (
 	errMatchBelowThreshold = errors.New("match below threshold")
 )
 
-type trackSearcher interface {
-	SearchTrack(ctx context.Context, artist, track, album string) (SearchTrackResponse, error)
+type TrackSearcher interface {
+	SearchTrack(ctx context.Context, artist, track, album string) (spotify.SearchTrackResponse, error)
+}
+
+func NewSpotifyTrackProvider(s TrackSearcher) *spotifyTrackProvider {
+	return &spotifyTrackProvider{
+		searcher: s,
+	}
 }
 
 type spotifyTrackProvider struct {
-	searcher trackSearcher
+	searcher TrackSearcher
 }
 
-func (s spotifyTrackProvider) GetTrack(ctx context.Context, song domain.Song) (domain.SpotifyTrack, error) {
+func (s *spotifyTrackProvider) GetTrack(ctx context.Context, song domain.Song) (domain.SpotifyTrack, error) {
 	resp, err := s.searcher.SearchTrack(ctx, song.Artist(), song.Track(), song.Album())
 	if err != nil {
 		return domain.SpotifyTrack{}, err
@@ -73,7 +80,7 @@ func (m match) weightedAverage() float64 {
 	return m.artistPercentMatch*weightArtist + m.trackPercentMatch*weightTrack + m.albumPercentMatch*weightAlbum
 }
 
-func findSongTrackMatch(tracks TrackCollection, song domain.Song) (domain.SpotifyTrack, error) {
+func findSongTrackMatch(tracks spotify.TrackCollection, song domain.Song) (domain.SpotifyTrack, error) {
 	slog.Info("spotify search tracks found", slog.Int("count", tracks.Total))
 
 	if tracks.Total == 1 {
@@ -117,15 +124,15 @@ func findSongTrackMatch(tracks TrackCollection, song domain.Song) (domain.Spotif
 	return matches[0].track, nil
 }
 
-func percentAlbumMatch(trackAlbum Album, song domain.Song) float64 {
-	if trackAlbum.AlbumType == SingleAlbumType && strings.HasPrefix(song.Album(), song.Track()) {
+func percentAlbumMatch(trackAlbum spotify.Album, song domain.Song) float64 {
+	if trackAlbum.AlbumType == spotify.SingleAlbumType && strings.HasPrefix(song.Album(), song.Track()) {
 		return 100.0
 	}
 
 	return stringSimilarity(song.Album(), trackAlbum.Name)
 }
 
-func percentArtistMatch(artists []Artist, artist string) float64 {
+func percentArtistMatch(artists []spotify.Artist, artist string) float64 {
 	if len(artists) == 1 {
 		return stringSimilarity(artist, artists[0].Name)
 	}

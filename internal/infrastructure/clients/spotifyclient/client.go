@@ -16,12 +16,12 @@ type Config struct {
 	Client  *http.Client
 }
 
-type client struct {
+type Client struct {
 	httpclient.Client
 }
 
-func New(cfg Config) *client {
-	return &client{
+func New(cfg Config) *Client {
+	return &Client{
 		Client: httpclient.NewRetryingClient(httpclient.Config{
 			BaseURL: cfg.BaseURL,
 			Client:  cfg.Client,
@@ -29,7 +29,7 @@ func New(cfg Config) *client {
 	}
 }
 
-func (c *client) SearchTrack(ctx context.Context, artist, track, album string) (spotify.SearchTrackResponse, error) {
+func (c *Client) SearchTrack(ctx context.Context, artist, track, album string) (spotify.SearchTrackResponse, error) {
 	query := fmt.Sprintf("%s%%20artist:%s", url.QueryEscape(track), url.QueryEscape(artist))
 	if album != "" {
 		query += fmt.Sprintf("%%20album:%s", url.QueryEscape(album))
@@ -53,7 +53,7 @@ func (c *client) SearchTrack(ctx context.Context, artist, track, album string) (
 	return collection, nil
 }
 
-func (c *client) CurrentUser(ctx context.Context) (spotify.User, error) {
+func (c *Client) CurrentUser(ctx context.Context) (spotify.User, error) {
 	resp, err := c.Get(ctx, "/me")
 	if err != nil {
 		return spotify.User{}, err
@@ -69,7 +69,7 @@ func (c *client) CurrentUser(ctx context.Context) (spotify.User, error) {
 	return user, nil
 }
 
-func (c *client) CreatePlaylist(ctx context.Context, userID string, request spotify.CreatePlaylistRequest) (spotify.SimplePlaylist, error) {
+func (c *Client) CreatePlaylist(ctx context.Context, userID string, request spotify.CreatePlaylistRequest) (spotify.SimplePlaylist, error) {
 	resp, err := c.Post(ctx, fmt.Sprintf("/users/%s/platlists", userID), httpclient.WithJSONBody(request))
 	if err != nil {
 		return spotify.SimplePlaylist{}, err

@@ -40,6 +40,18 @@ func NewSong(artist, track, album, upc string) (Song, error) {
 	}, nil
 }
 
+func NewSongFromDB(id uuid.UUID, artist, track, album, upc, songHash string, created time.Time) Song {
+	return Song{
+		id:       id,
+		artist:   artist,
+		track:    track,
+		album:    album,
+		upc:      upc,
+		songHash: songHash,
+		created:  created,
+	}
+}
+
 func (s Song) ID() uuid.UUID {
 	return s.id
 }

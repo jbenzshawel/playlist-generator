@@ -16,5 +16,10 @@ func InitializeSchema(ctx context.Context, db *sql.DB) error {
 		return err
 	}
 
+	_, err = db.ExecContext(ctx, spotifyTrackSchema)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
