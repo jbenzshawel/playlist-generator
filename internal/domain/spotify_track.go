@@ -1,24 +1,43 @@
 package domain
 
-import "github.com/google/uuid"
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
+
+type SpotifyTrackRepository interface {
+	// GetUnknownSongs returns all songs that haven't been populated with
+	// Spotify metadata
+	GetUnknownSongs(ctx context.Context) ([]Song, error)
+
+	Insert(ctx context.Context, track SpotifyTrack) error
+}
 
 // SpotifyTrack includes the song metadata required to create a spotify playlist.
 type SpotifyTrack struct {
-	songID  uuid.UUID
-	trackID string
-	uri     string
+	id            string
+	uri           string
+	songID        uuid.UUID
+	matchNotFound bool
 }
 
 func NewSpotifyTrack(songID uuid.UUID, trackID, uri string) SpotifyTrack {
 	return SpotifyTrack{
-		songID:  songID,
-		trackID: trackID,
-		uri:     uri,
+		songID: songID,
+		id:     trackID,
+		uri:    uri,
+	}
+}
+
+func NewNotFoundSpotifyTrack(songID uuid.UUID) SpotifyTrack {
+	return SpotifyTrack{
+		matchNotFound: true,
 	}
 }
 
 func (s SpotifyTrack) TrackID() string {
-	return s.trackID
+	return s.id
 }
 
 func (s SpotifyTrack) URI() string {
@@ -27,4 +46,8 @@ func (s SpotifyTrack) URI() string {
 
 func (s SpotifyTrack) SongID() uuid.UUID {
 	return s.songID
+}
+
+func (s SpotifyTrack) MatchNotFound() bool {
+	return s.matchNotFound
 }

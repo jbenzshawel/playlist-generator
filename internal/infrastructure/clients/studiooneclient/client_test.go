@@ -1,4 +1,4 @@
-package iprclient
+package studiooneclient
 
 import (
 	"net/url"

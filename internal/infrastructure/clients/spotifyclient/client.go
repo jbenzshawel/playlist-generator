@@ -3,17 +3,17 @@ package spotifyclient
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/url"
 
 	"github.com/jbenzshawel/playlist-generator/internal/app/playlists/spotify"
 	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient"
-	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient/auth"
 	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient/decode"
 )
 
 type Config struct {
 	BaseURL *url.URL
-	Auth    auth.Config
+	Client  *http.Client
 }
 
 type client struct {
@@ -24,7 +24,7 @@ func New(cfg Config) *client {
 	return &client{
 		Client: httpclient.NewRetryingClient(httpclient.Config{
 			BaseURL: cfg.BaseURL,
-			Auth:    &cfg.Auth,
+			Client:  cfg.Client,
 		}),
 	}
 }
