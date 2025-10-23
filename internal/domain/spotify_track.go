@@ -1,16 +1,19 @@
 package domain
 
+import "github.com/google/uuid"
+
+// SpotifyTrack includes the song metadata required to create a spotify playlist.
 type SpotifyTrack struct {
-	songHash string
-	trackID  string
-	uri      string
+	songID  uuid.UUID
+	trackID string
+	uri     string
 }
 
-func NewSpotifyTrack(songHash, trackID, uri string) SpotifyTrack {
+func NewSpotifyTrack(songID uuid.UUID, trackID, uri string) SpotifyTrack {
 	return SpotifyTrack{
-		songHash: songHash,
-		trackID:  trackID,
-		uri:      uri,
+		songID:  songID,
+		trackID: trackID,
+		uri:     uri,
 	}
 }
 
@@ -22,6 +25,6 @@ func (s SpotifyTrack) URI() string {
 	return s.uri
 }
 
-func (s SpotifyTrack) SongHash() string {
-	return s.songHash
+func (s SpotifyTrack) SongID() uuid.UUID {
+	return s.songID
 }

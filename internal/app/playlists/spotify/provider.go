@@ -78,14 +78,14 @@ func findSongTrackMatch(tracks TrackCollection, song domain.Song) (domain.Spotif
 
 	if tracks.Total == 1 {
 		t := tracks.Items[0]
-		return domain.NewSpotifyTrack(song.SongHash(), t.ID, t.URI), nil
+		return domain.NewSpotifyTrack(song.ID(), t.ID, t.URI), nil
 	}
 
 	var matches []match
 
 	for _, t := range tracks.Items {
 		m := match{
-			track:              domain.NewSpotifyTrack(song.SongHash(), t.ID, t.URI),
+			track:              domain.NewSpotifyTrack(song.ID(), t.ID, t.URI),
 			trackPercentMatch:  stringSimilarity(song.Track(), t.Name),
 			artistPercentMatch: percentArtistMatch(t.Artists, song.Artist()),
 			albumPercentMatch:  percentAlbumMatch(t.Album, song),

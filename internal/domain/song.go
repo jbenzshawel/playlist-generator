@@ -12,6 +12,7 @@ type SongRepository interface {
 	BulkInsert(ctx context.Context, songs []Song) error
 }
 
+// Song represents a song downloaded from a playlist data source.
 type Song struct {
 	id       uuid.UUID
 	artist   string
@@ -23,7 +24,7 @@ type Song struct {
 }
 
 func NewSong(artist, track, album, upc string) (Song, error) {
-	songHash, err := NewSongHash(artist, track, album)
+	songHash, err := newSongHash(artist, track, album)
 	if err != nil {
 		return Song{}, err
 	}
@@ -59,6 +60,8 @@ func (s Song) UPC() string {
 	return s.upc
 }
 
+// SongHash returns a hash of the artist, track, and album. It is used
+// for relationships between various song sources and the domain.Song
 func (s Song) SongHash() string {
 	return s.songHash
 }

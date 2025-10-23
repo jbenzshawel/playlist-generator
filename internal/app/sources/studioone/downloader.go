@@ -23,13 +23,13 @@ type queryer interface {
 type downloader struct {
 	queryer            queryer
 	songRepository     domain.SongRepository
-	pubRadioRepository domain.PublicRadioRepository
+	pubRadioRepository domain.StudioOneRepository
 }
 
 func NewDownloader(
 	provider queryer,
 	songRepository domain.SongRepository,
-	pubRadioRepository domain.PublicRadioRepository,
+	pubRadioRepository domain.StudioOneRepository,
 ) *downloader {
 	return &downloader{
 		queryer:            provider,
@@ -46,7 +46,7 @@ func (d *downloader) DownloadSongList(ctx context.Context, date string) error {
 	}
 
 	var songs []domain.Song
-	var pubRadioSongs []domain.PublicRadioSong
+	var pubRadioSongs []domain.StudioOneSource
 
 	for _, item := range collection.Items {
 		// TODO: filter on programs
@@ -69,7 +69,7 @@ func (d *downloader) DownloadSongList(ctx context.Context, date string) error {
 				slog.Warn("song skipped", slog.Any("error", err))
 				continue
 			}
-			pubRadio := domain.NewPublicRadioSong(s.ID, song.SongHash(), programName, date, parsedTime)
+			pubRadio := domain.NewStudioOneSource(s.ID, song.SongHash(), programName, date, parsedTime)
 
 			pubRadioSongs = append(pubRadioSongs, pubRadio)
 		}

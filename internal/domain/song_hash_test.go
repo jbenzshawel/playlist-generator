@@ -60,7 +60,7 @@ func TestNewHash(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			actual, err := NewSongHash(tc.artist, tc.track, tc.album)
+			actual, err := newSongHash(tc.artist, tc.track, tc.album)
 			assert.Equal(t, tc.expectedHash, actual)
 			assert.Equal(t, err, tc.expectedErr)
 		})

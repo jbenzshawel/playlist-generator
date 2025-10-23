@@ -9,7 +9,7 @@ import (
 	"github.com/jbenzshawel/playlist-generator/internal/common/cerror"
 )
 
-func NewSongHash(artist, track, album string) (string, error) {
+func newSongHash(artist, track, album string) (string, error) {
 	if err := validateSongHash(artist, track, album); err != nil {
 		return "", err
 	}

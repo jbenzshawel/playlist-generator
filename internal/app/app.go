@@ -35,7 +35,7 @@ func NewApplication(cfg config.Config, db *sql.DB) Application {
 	})
 
 	songRepo := storage.NewSongSqlRepository(db)
-	pubRadioRepo := storage.NewPublicRadioSqlRepository(db)
+	pubRadioRepo := storage.NewStudioOneSqlRepository(db)
 
 	return Application{
 		db: db,

@@ -59,7 +59,7 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 					},
 				},
 			},
-			expectedTrack: domain.NewSpotifyTrack(song.SongHash(), trackID, uri),
+			expectedTrack: domain.NewSpotifyTrack(song.ID(), trackID, uri),
 		},
 		{
 			name: "multiple partial matches",
@@ -113,7 +113,7 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 					},
 				},
 			},
-			expectedTrack: domain.NewSpotifyTrack(song.SongHash(), trackID, uri),
+			expectedTrack: domain.NewSpotifyTrack(song.ID(), trackID, uri),
 		},
 		{
 			name: "single album type",
@@ -153,7 +153,7 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 					},
 				},
 			},
-			expectedTrack: domain.NewSpotifyTrack(songSingle.SongHash(), trackID, uri),
+			expectedTrack: domain.NewSpotifyTrack(songSingle.ID(), trackID, uri),
 		},
 		{
 			name:               "search without album ",
@@ -180,7 +180,7 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 					},
 				},
 			},
-			expectedTrack: domain.NewSpotifyTrack(song.SongHash(), trackID, uri),
+			expectedTrack: domain.NewSpotifyTrack(song.ID(), trackID, uri),
 		},
 		{
 			name: "match at min threshold ",
@@ -220,7 +220,7 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 					},
 				},
 			},
-			expectedTrack: domain.NewSpotifyTrack(song.SongHash(), trackID, uri),
+			expectedTrack: domain.NewSpotifyTrack(song.ID(), trackID, uri),
 		},
 		{
 			name: "match below min threshold ",
