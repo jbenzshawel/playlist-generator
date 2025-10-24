@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/jbenzshawel/playlist-generator/internal/common/decorator"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
 
@@ -12,35 +13,39 @@ const (
 	timeLayout = "01-02-2006 15:04:05"
 )
 
-type Downloader interface {
-	DownloadSongList(ctx context.Context, date string) error
+type SongListCommand struct {
+	Date string
+}
+
+type SongListCommandHandler decorator.CommandHandler[SongListCommand]
+
+func NewSongListCommand(
+	provider queryer,
+	repository domain.Repository,
+) SongListCommandHandler {
+	return decorator.ApplyDBTransactionDecorator(
+		&songListCommand{
+			queryer:            provider,
+			songRepository:     repository.Songs(),
+			pubRadioRepository: repository.SongSource(),
+		},
+		repository,
+	)
 }
 
 type queryer interface {
 	GetSongs(ctx context.Context, date string) (Collection, error)
 }
 
-type downloader struct {
+type songListCommand struct {
 	queryer            queryer
 	songRepository     domain.SongRepository
 	pubRadioRepository domain.SongSourceRepository
 }
 
-func NewDownloader(
-	provider queryer,
-	songRepository domain.SongRepository,
-	pubRadioRepository domain.SongSourceRepository,
-) *downloader {
-	return &downloader{
-		queryer:            provider,
-		songRepository:     songRepository,
-		pubRadioRepository: pubRadioRepository,
-	}
-}
-
-func (d *downloader) DownloadSongList(ctx context.Context, date string) error {
-	slog.Info("downloading studio one songs", slog.Any("date", date))
-	collection, err := d.queryer.GetSongs(ctx, date)
+func (d *songListCommand) Execute(ctx context.Context, cmd SongListCommand) error {
+	slog.Info("downloading studio one songs", slog.Any("date", cmd.Date))
+	collection, err := d.queryer.GetSongs(ctx, cmd.Date)
 	if err != nil {
 		return err
 	}
@@ -69,7 +74,7 @@ func (d *downloader) DownloadSongList(ctx context.Context, date string) error {
 				slog.Warn("song skipped", slog.Any("error", err))
 				continue
 			}
-			pubRadio := domain.NewSongSource(s.ID, song.SongHash(), domain.StudioOneSourceType, programName, date, parsedTime)
+			pubRadio := domain.NewSongSource(s.ID, song.SongHash(), domain.StudioOneSourceType, programName, cmd.Date, parsedTime)
 
 			pubRadioSongs = append(pubRadioSongs, pubRadio)
 		}

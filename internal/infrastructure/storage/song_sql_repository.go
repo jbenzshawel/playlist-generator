@@ -21,18 +21,20 @@ var songSchema string = `CREATE TABLE IF NOT EXISTS songs (
 );`
 
 type SongSqlRepository struct {
-	db *sql.DB
+	tx *sql.Tx
 }
 
-func NewSongSqlRepository(db *sql.DB) *SongSqlRepository {
-	return &SongSqlRepository{
-		db: db,
-	}
+func NewSongSqlRepository() *SongSqlRepository {
+	return &SongSqlRepository{}
 }
 
-func (r SongSqlRepository) BulkInsert(ctx context.Context, songs []domain.Song) error {
+func (r *SongSqlRepository) SetTransaction(tx *sql.Tx) {
+	r.tx = tx
+}
+
+func (r *SongSqlRepository) BulkInsert(ctx context.Context, songs []domain.Song) error {
 	for _, s := range songs {
-		_, err := r.db.ExecContext(
+		_, err := r.tx.ExecContext(
 			ctx,
 			`INSERT INTO songs (id, artist, track, album, upc, song_hash, created) 
 					VALUES (?,?,?, ?, ?, ?, ?)

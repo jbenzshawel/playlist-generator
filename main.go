@@ -57,16 +57,19 @@ func main() {
 
 	spotifyClient := setupSpotifyClient(cfg)
 
-	repos := newRepositories(db)
-	sources := newSources(cfg, repos)
+	repository := storage.NewRepository(db)
+	sources := newSources(cfg, repository)
 
-	err = sources.studioOne.DownloadSongList(ctx, *dateFlag)
+	err = sources.studioOne.Execute(ctx, studioone.SongListCommand{Date: *dateFlag})
 	if err != nil {
 		slog.Error("studio one download song list error", slog.Any("error", err))
 	}
 
 	// TODO: Run in background?
-	err = spotify.NewTrackUpdater(spotifyClient, repos.spotifyTracks).UpdateSpotifyTracks(ctx)
+	err = spotify.NewUpdateTracksHandler(spotifyClient, repository).Execute(ctx, spotify.UpdateTracks{})
+	if err != nil {
+		slog.Error("spotify track update error", slog.Any("error", err))
+	}
 }
 
 func setupSpotifyClient(cfg config.Config) *spotifyclient.Client {
@@ -110,25 +113,11 @@ func setupSpotifyClient(cfg config.Config) *spotifyclient.Client {
 	})
 }
 
-type repositories struct {
-	songs         domain.SongRepository
-	studioOne     domain.SongSourceRepository
-	spotifyTracks domain.SpotifyTrackRepository
-}
-
-func newRepositories(db *sql.DB) repositories {
-	return repositories{
-		songs:         storage.NewSongSqlRepository(db),
-		studioOne:     storage.NewSongSourceSqlRepository(db),
-		spotifyTracks: storage.NewSpotifyTracksSqlRepository(db),
-	}
-}
-
 type downloader struct {
-	studioOne studioone.Downloader
+	studioOne studioone.SongListCommandHandler
 }
 
-func newSources(cfg config.Config, repos repositories) downloader {
+func newSources(cfg config.Config, repos domain.Repository) downloader {
 	iprBaseURL, err := url.Parse(cfg.IowaPublicRadio.BaseURL)
 	if err != nil {
 		panic(fmt.Errorf("failed to parse IowaPublicRadio.BaseURL: %w", err))
@@ -139,6 +128,6 @@ func newSources(cfg config.Config, repos repositories) downloader {
 	})
 
 	return downloader{
-		studioOne: studioone.NewDownloader(iprClient, repos.songs, repos.studioOne),
+		studioOne: studioone.NewSongListCommand(iprClient, repos),
 	}
 }

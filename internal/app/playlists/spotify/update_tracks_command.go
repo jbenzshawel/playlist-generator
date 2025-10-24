@@ -6,26 +6,34 @@ import (
 	"log/slog"
 
 	"github.com/jbenzshawel/playlist-generator/internal/common/async"
+	"github.com/jbenzshawel/playlist-generator/internal/common/decorator"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
+
+type UpdateTracks struct{}
+
+type UpdateTracksHandler decorator.CommandHandler[UpdateTracks]
+
+func NewUpdateTracksHandler(searcher TrackSearcher, repository domain.Repository) UpdateTracksHandler {
+	return decorator.ApplyDBTransactionDecorator(
+		&trackUpdateCommand{
+			provider:   NewSpotifyTrackProvider(searcher),
+			repository: repository.SpotifyTracks(),
+		},
+		repository,
+	)
+}
 
 type provider interface {
 	GetTrack(ctx context.Context, song domain.Song) (domain.SpotifyTrack, error)
 }
 
-func NewTrackUpdater(searcher TrackSearcher, r domain.SpotifyTrackRepository) *trackUpdater {
-	return &trackUpdater{
-		provider:   NewSpotifyTrackProvider(searcher),
-		repository: r,
-	}
-}
-
-type trackUpdater struct {
+type trackUpdateCommand struct {
 	provider   provider
 	repository domain.SpotifyTrackRepository
 }
 
-func (t *trackUpdater) UpdateSpotifyTracks(ctx context.Context) error {
+func (t *trackUpdateCommand) Execute(ctx context.Context, _ UpdateTracks) error {
 	songs, err := t.repository.GetUnknownSongs(ctx)
 	if err != nil {
 		return err

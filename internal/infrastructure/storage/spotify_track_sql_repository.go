@@ -23,17 +23,19 @@ var spotifyTrackSchema string = `CREATE TABLE IF NOT EXISTS spotify_tracks (
 );`
 
 type SpotifyTrackSqlRepository struct {
-	db *sql.DB
+	tx *sql.Tx
 }
 
-func NewSpotifyTracksSqlRepository(db *sql.DB) *SpotifyTrackSqlRepository {
-	return &SpotifyTrackSqlRepository{
-		db: db,
-	}
+func NewSpotifyTracksSqlRepository() *SpotifyTrackSqlRepository {
+	return &SpotifyTrackSqlRepository{}
 }
 
-func (r SpotifyTrackSqlRepository) GetUnknownSongs(ctx context.Context) ([]domain.Song, error) {
-	rows, err := r.db.QueryContext(
+func (r *SpotifyTrackSqlRepository) SetTransaction(tx *sql.Tx) {
+	r.tx = tx
+}
+
+func (r *SpotifyTrackSqlRepository) GetUnknownSongs(ctx context.Context) ([]domain.Song, error) {
+	rows, err := r.tx.QueryContext(
 		ctx,
 		`SELECT songs.* 
 		FROM songs LEFT JOIN spotify_tracks ON songs.id = spotify_tracks.song_id
@@ -85,7 +87,7 @@ func (r SpotifyTrackSqlRepository) GetUnknownSongs(ctx context.Context) ([]domai
 }
 
 func (r SpotifyTrackSqlRepository) Insert(ctx context.Context, track domain.SpotifyTrack) error {
-	_, err := r.db.ExecContext(
+	_, err := r.tx.ExecContext(
 		ctx,
 		`INSERT INTO spotify_tracks (id, uri, song_id, match_not_found)
 			VALUES (?,?,?,?);`,

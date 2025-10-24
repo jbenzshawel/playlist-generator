@@ -8,6 +8,8 @@ import (
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
 
+// TODO: make all of these unexported except Aggregate
+
 var _ domain.SongSourceRepository = (*SongSourceSqlRepository)(nil)
 
 var songSourceSchema string = `CREATE TABLE IF NOT EXISTS song_sources (
@@ -23,18 +25,20 @@ var songSourceSchema string = `CREATE TABLE IF NOT EXISTS song_sources (
 );`
 
 type SongSourceSqlRepository struct {
-	db *sql.DB
+	tx *sql.Tx
 }
 
-func NewSongSourceSqlRepository(db *sql.DB) *SongSourceSqlRepository {
-	return &SongSourceSqlRepository{
-		db: db,
-	}
+func NewSongSourceSqlRepository() *SongSourceSqlRepository {
+	return &SongSourceSqlRepository{}
 }
 
-func (r SongSourceSqlRepository) BulkInsert(ctx context.Context, songs []domain.SongSource) error {
+func (r *SongSourceSqlRepository) SetTransaction(tx *sql.Tx) {
+	r.tx = tx
+}
+
+func (r *SongSourceSqlRepository) BulkInsert(ctx context.Context, songs []domain.SongSource) error {
 	for _, s := range songs {
-		_, err := r.db.ExecContext(
+		_, err := r.tx.ExecContext(
 			ctx,
 			`INSERT INTO song_sources (id, source_id, source_type_id, song_hash, program_name, date_played, end_time, created)
 			VALUES (?,?,?,?,?,?,?, ?);`,
