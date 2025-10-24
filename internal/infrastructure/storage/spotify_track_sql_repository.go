@@ -12,6 +12,8 @@ import (
 
 var _ domain.SpotifyTrackRepository = (*SpotifyTrackSqlRepository)(nil)
 
+// TODO: Delete match not found?
+
 var spotifyTrackSchema string = `CREATE TABLE IF NOT EXISTS spotify_tracks (
     id TEXT,
     uri TEXT NOT NULL,
@@ -35,7 +37,7 @@ func (r SpotifyTrackSqlRepository) GetUnknownSongs(ctx context.Context) ([]domai
 		ctx,
 		`SELECT songs.* 
 		FROM songs LEFT JOIN spotify_tracks ON songs.id = spotify_tracks.song_id
-		WHERE coalesce(spotify_tracks.match_not_found, 0) = 0;`,
+		WHERE spotify_tracks.uri IS NULL;`,
 	)
 	if err != nil {
 		return nil, err
