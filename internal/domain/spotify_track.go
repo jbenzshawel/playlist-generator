@@ -32,6 +32,7 @@ func NewSpotifyTrack(songID uuid.UUID, trackID, uri string) SpotifyTrack {
 
 func NewNotFoundSpotifyTrack(songID uuid.UUID) SpotifyTrack {
 	return SpotifyTrack{
+		songID:        songID,
 		matchNotFound: true,
 	}
 }

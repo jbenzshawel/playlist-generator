@@ -112,14 +112,14 @@ func setupSpotifyClient(cfg config.Config) *spotifyclient.Client {
 
 type repositories struct {
 	songs         domain.SongRepository
-	studioOne     domain.StudioOneRepository
+	studioOne     domain.SongSourceRepository
 	spotifyTracks domain.SpotifyTrackRepository
 }
 
 func newRepositories(db *sql.DB) repositories {
 	return repositories{
 		songs:         storage.NewSongSqlRepository(db),
-		studioOne:     storage.NewStudioOneSqlRepository(db),
+		studioOne:     storage.NewSongSourceSqlRepository(db),
 		spotifyTracks: storage.NewSpotifyTracksSqlRepository(db),
 	}
 }

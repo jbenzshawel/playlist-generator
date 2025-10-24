@@ -25,3 +25,9 @@ func (t SourceType) IsValid() bool {
 	_, ok := sourceTypes[t]
 	return ok
 }
+
+func AllSourceTypes() []SourceType {
+	return []SourceType{
+		StudioOneSourceType,
+	}
+}

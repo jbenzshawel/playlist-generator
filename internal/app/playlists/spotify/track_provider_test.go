@@ -1,8 +1,7 @@
-package providers
+package spotify
 
 import (
 	"context"
-	"github.com/jbenzshawel/playlist-generator/internal/app/playlists/spotify"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,7 +30,7 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 	testCases := []struct {
 		name               string
 		song               domain.Song
-		searchResults      spotify.SearchTrackResponse
+		searchResults      SearchTrackResponse
 		searchWithoutAlbum bool
 		expectedTrack      domain.SpotifyTrack
 		expectedErr        error
@@ -39,16 +38,16 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 		{
 			name: "single result",
 			song: song,
-			searchResults: spotify.SearchTrackResponse{
-				Tracks: spotify.TrackCollection{
+			searchResults: SearchTrackResponse{
+				Tracks: TrackCollection{
 					Total: 1,
-					Items: []spotify.Track{
+					Items: []Track{
 						{
-							Album: spotify.Album{
-								AlbumType: spotify.AlbumAlbumType,
+							Album: Album{
+								AlbumType: AlbumAlbumType,
 								Name:      album,
 							},
-							Artists: []spotify.Artist{
+							Artists: []Artist{
 								{
 									Name: artist,
 								},
@@ -65,16 +64,16 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 		{
 			name: "multiple partial matches",
 			song: song,
-			searchResults: spotify.SearchTrackResponse{
-				Tracks: spotify.TrackCollection{
+			searchResults: SearchTrackResponse{
+				Tracks: TrackCollection{
 					Total: 3,
-					Items: []spotify.Track{
+					Items: []Track{
 						{
-							Album: spotify.Album{
-								AlbumType: spotify.AlbumAlbumType,
+							Album: Album{
+								AlbumType: AlbumAlbumType,
 								Name:      "Never There (single)",
 							},
-							Artists: []spotify.Artist{
+							Artists: []Artist{
 								{
 									Name: artist,
 								},
@@ -84,11 +83,11 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 							URI:  "single",
 						},
 						{
-							Album: spotify.Album{
-								AlbumType: spotify.AlbumAlbumType,
+							Album: Album{
+								AlbumType: AlbumAlbumType,
 								Name:      "Never There (single)",
 							},
-							Artists: []spotify.Artist{
+							Artists: []Artist{
 								{
 									Name: artist,
 								},
@@ -98,11 +97,11 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 							URI:  "single",
 						},
 						{
-							Album: spotify.Album{
-								AlbumType: spotify.AlbumAlbumType,
+							Album: Album{
+								AlbumType: AlbumAlbumType,
 								Name:      "Prolonging Magic",
 							},
-							Artists: []spotify.Artist{
+							Artists: []Artist{
 								{
 									Name: "CAKE",
 								},
@@ -119,16 +118,16 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 		{
 			name: "single album type",
 			song: songSingle,
-			searchResults: spotify.SearchTrackResponse{
-				Tracks: spotify.TrackCollection{
+			searchResults: SearchTrackResponse{
+				Tracks: TrackCollection{
 					Total: 2,
-					Items: []spotify.Track{
+					Items: []Track{
 						{
-							Album: spotify.Album{
-								AlbumType: spotify.AlbumAlbumType,
+							Album: Album{
+								AlbumType: AlbumAlbumType,
 								Name:      album,
 							},
-							Artists: []spotify.Artist{
+							Artists: []Artist{
 								{
 									Name: artist,
 								},
@@ -138,11 +137,11 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 							URI:  "no match",
 						},
 						{
-							Album: spotify.Album{
-								AlbumType: spotify.SingleAlbumType,
+							Album: Album{
+								AlbumType: SingleAlbumType,
 								Name:      "single",
 							},
-							Artists: []spotify.Artist{
+							Artists: []Artist{
 								{
 									Name: artist,
 								},
@@ -160,16 +159,16 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 			name:               "search without album ",
 			song:               song,
 			searchWithoutAlbum: true,
-			searchResults: spotify.SearchTrackResponse{
-				Tracks: spotify.TrackCollection{
+			searchResults: SearchTrackResponse{
+				Tracks: TrackCollection{
 					Total: 1,
-					Items: []spotify.Track{
+					Items: []Track{
 						{
-							Album: spotify.Album{
-								AlbumType: spotify.AlbumAlbumType,
+							Album: Album{
+								AlbumType: AlbumAlbumType,
 								Name:      album,
 							},
-							Artists: []spotify.Artist{
+							Artists: []Artist{
 								{
 									Name: artist,
 								},
@@ -186,16 +185,16 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 		{
 			name: "match at min threshold ",
 			song: song,
-			searchResults: spotify.SearchTrackResponse{
-				Tracks: spotify.TrackCollection{
+			searchResults: SearchTrackResponse{
+				Tracks: TrackCollection{
 					Total: 2,
-					Items: []spotify.Track{
+					Items: []Track{
 						{
-							Album: spotify.Album{
-								AlbumType: spotify.AlbumAlbumType,
+							Album: Album{
+								AlbumType: AlbumAlbumType,
 								Name:      "no match",
 							},
-							Artists: []spotify.Artist{
+							Artists: []Artist{
 								{
 									Name: "no match",
 								},
@@ -205,11 +204,11 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 							URI:  "no match",
 						},
 						{
-							Album: spotify.Album{
-								AlbumType: spotify.AlbumAlbumType,
+							Album: Album{
+								AlbumType: AlbumAlbumType,
 								Name:      "mag",
 							},
-							Artists: []spotify.Artist{
+							Artists: []Artist{
 								{
 									Name: "cak",
 								},
@@ -226,16 +225,16 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 		{
 			name: "match below min threshold ",
 			song: song,
-			searchResults: spotify.SearchTrackResponse{
-				Tracks: spotify.TrackCollection{
+			searchResults: SearchTrackResponse{
+				Tracks: TrackCollection{
 					Total: 2,
-					Items: []spotify.Track{
+					Items: []Track{
 						{
-							Album: spotify.Album{
-								AlbumType: spotify.AlbumAlbumType,
+							Album: Album{
+								AlbumType: AlbumAlbumType,
 								Name:      "no match",
 							},
-							Artists: []spotify.Artist{
+							Artists: []Artist{
 								{
 									Name: "no match",
 								},
@@ -245,11 +244,11 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 							URI:  "no match",
 						},
 						{
-							Album: spotify.Album{
-								AlbumType: spotify.AlbumAlbumType,
+							Album: Album{
+								AlbumType: AlbumAlbumType,
 								Name:      "ma",
 							},
-							Artists: []spotify.Artist{
+							Artists: []Artist{
 								{
 									Name: "cak",
 								},
@@ -267,10 +266,10 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 			name:               "no results",
 			song:               song,
 			searchWithoutAlbum: true,
-			searchResults: spotify.SearchTrackResponse{
-				Tracks: spotify.TrackCollection{
+			searchResults: SearchTrackResponse{
+				Tracks: TrackCollection{
 					Total: 0,
-					Items: []spotify.Track{},
+					Items: []Track{},
 				},
 			},
 			expectedErr: errTrackNotFound,
@@ -280,9 +279,9 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			searcher := spotify.newMocktrackSearcher(t)
+			searcher := newMocktrackSearcher(t)
 			if tc.searchWithoutAlbum {
-				searcher.EXPECT().SearchTrack(ctx, tc.song.Artist(), tc.song.Track(), tc.song.Album()).Return(spotify.SearchTrackResponse{}, nil)
+				searcher.EXPECT().SearchTrack(ctx, tc.song.Artist(), tc.song.Track(), tc.song.Album()).Return(SearchTrackResponse{}, nil)
 				searcher.EXPECT().SearchTrack(ctx, tc.song.Artist(), tc.song.Track(), "").Return(tc.searchResults, nil)
 			} else {
 				searcher.EXPECT().SearchTrack(ctx, tc.song.Artist(), tc.song.Track(), tc.song.Album()).Return(tc.searchResults, nil)

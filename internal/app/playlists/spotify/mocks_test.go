@@ -6,7 +6,6 @@ package spotify
 
 import (
 	"context"
-
 	mock "github.com/stretchr/testify/mock"
 )
 

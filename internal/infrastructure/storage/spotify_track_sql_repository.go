@@ -6,17 +6,18 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	
+
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
 
 var _ domain.SpotifyTrackRepository = (*SpotifyTrackSqlRepository)(nil)
 
 var spotifyTrackSchema string = `CREATE TABLE IF NOT EXISTS spotify_tracks (
-    id TEXT PRIMARY KEY,
+    id TEXT,
     uri TEXT NOT NULL,
-    songId TEXT NOT NULL,
-    matchNotFound INTEGER NOT NULL DEFAULT 0 CHECK(matchNotFound IN (0,1))
+    song_id TEXT NOT NULL,
+    match_not_found INTEGER NOT NULL DEFAULT 0 CHECK(match_not_found IN (0,1)),
+    PRIMARY KEY (id, song_id)
 );`
 
 type SpotifyTrackSqlRepository struct {
@@ -33,8 +34,8 @@ func (r SpotifyTrackSqlRepository) GetUnknownSongs(ctx context.Context) ([]domai
 	rows, err := r.db.QueryContext(
 		ctx,
 		`SELECT songs.* 
-		FROM songs LEFT JOIN spotify_tracks ON songs.id = spotify_tracks.songId
-		WHERE coalesce(spotify_tracks.matchNotFound, 0) = 0;`,
+		FROM songs LEFT JOIN spotify_tracks ON songs.id = spotify_tracks.song_id
+		WHERE coalesce(spotify_tracks.match_not_found, 0) = 0;`,
 	)
 	if err != nil {
 		return nil, err
@@ -84,7 +85,7 @@ func (r SpotifyTrackSqlRepository) GetUnknownSongs(ctx context.Context) ([]domai
 func (r SpotifyTrackSqlRepository) Insert(ctx context.Context, track domain.SpotifyTrack) error {
 	_, err := r.db.ExecContext(
 		ctx,
-		`INSERT INTO spotify_tracks (id, uri, songID, matchNotFound)
+		`INSERT INTO spotify_tracks (id, uri, song_id, match_not_found)
 			VALUES (?,?,?,?);`,
 		track.TrackID(), track.URI(), track.SongID(), boolToInt(track.MatchNotFound()),
 	)

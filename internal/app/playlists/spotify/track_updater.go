@@ -2,7 +2,6 @@ package spotify
 
 import (
 	"context"
-	"github.com/jbenzshawel/playlist-generator/internal/app/playlists/spotify/internal/providers"
 	"log/slog"
 
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
@@ -12,9 +11,9 @@ type provider interface {
 	GetTrack(ctx context.Context, song domain.Song) (domain.SpotifyTrack, error)
 }
 
-func NewTrackUpdater(searcher providers.TrackSearcher, r domain.SpotifyTrackRepository) *trackUpdater {
+func NewTrackUpdater(searcher TrackSearcher, r domain.SpotifyTrackRepository) *trackUpdater {
 	return &trackUpdater{
-		provider:   providers.NewSpotifyTrackProvider(searcher),
+		provider:   NewSpotifyTrackProvider(searcher),
 		repository: r,
 	}
 }
@@ -34,7 +33,7 @@ func (t *trackUpdater) UpdateSpotifyTracks(ctx context.Context) error {
 		track, err := t.provider.GetTrack(ctx, song)
 		if err != nil {
 			slog.Warn("spotify track not found for song", slog.Any("song", song))
-			continue
+			track = domain.NewNotFoundSpotifyTrack(song.ID())
 		}
 
 		err = t.repository.Insert(ctx, track)
