@@ -2,6 +2,7 @@ package spotify
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/jbenzshawel/playlist-generator/internal/common/async"
@@ -31,10 +32,10 @@ func (t *trackUpdater) UpdateSpotifyTracks(ctx context.Context) error {
 	}
 
 	// anything higher than 6 workers starts to get rate limited
-	async.ParallelFor(ctx, len(songs), 6, func(idx int) {
+	err = async.ParallelFor(ctx, len(songs), 6, func(ctx context.Context, idx int) error {
 		defer func() {
 			if r := recover(); r != nil {
-				slog.Error("recovered from panic searching for tracks", slog.Any("panic", r))
+				err = fmt.Errorf("panic occurred during searching for tracks: %v", r)
 			}
 		}()
 
@@ -53,9 +54,14 @@ func (t *trackUpdater) UpdateSpotifyTracks(ctx context.Context) error {
 
 		err = t.repository.Insert(ctx, track)
 		if err != nil {
-			slog.Warn("error inserting spotify track", slog.Any("error", err))
+			return fmt.Errorf("spotify track insert error: %w", err)
 		}
+
+		return nil
 	})
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
