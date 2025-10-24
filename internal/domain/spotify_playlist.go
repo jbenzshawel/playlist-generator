@@ -1,10 +1,19 @@
 package domain
 
-import "time"
+import (
+	"context"
+	"time"
+)
+
+type SpotifyPlaylistRepository interface {
+	Insert(ctx context.Context, playlist SpotifyPlaylist) error
+	SetLastDaySynced(ctx context.Context, id, lastDaySynced string) error
+}
 
 // SpotifyPlaylist represents a playlist created from the generator.
 type SpotifyPlaylist struct {
 	id            string
+	uri           string
 	name          string
 	sourceType    SourceType
 	lastDaySynced string
@@ -23,6 +32,10 @@ func NewSpotifyPlaylist(id, name string, sourceType SourceType, lastDaySynced st
 
 func (p SpotifyPlaylist) ID() string {
 	return p.id
+}
+
+func (p SpotifyPlaylist) URI() string {
+	return p.uri
 }
 
 func (p SpotifyPlaylist) Name() string {

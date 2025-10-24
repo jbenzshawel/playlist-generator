@@ -18,15 +18,21 @@ var (
 	errMatchBelowThreshold = errors.New("match below threshold")
 )
 
-type trackSearcher interface {
+type TrackSearcher interface {
 	SearchTrack(ctx context.Context, artist, track, album string) (SearchTrackResponse, error)
 }
 
-type spotifyTrackProvider struct {
-	searcher trackSearcher
+func NewSpotifyTrackProvider(s TrackSearcher) *spotifyTrackProvider {
+	return &spotifyTrackProvider{
+		searcher: s,
+	}
 }
 
-func (s spotifyTrackProvider) GetTrack(ctx context.Context, song domain.Song) (domain.SpotifyTrack, error) {
+type spotifyTrackProvider struct {
+	searcher TrackSearcher
+}
+
+func (s *spotifyTrackProvider) GetTrack(ctx context.Context, song domain.Song) (domain.SpotifyTrack, error) {
 	resp, err := s.searcher.SearchTrack(ctx, song.Artist(), song.Track(), song.Album())
 	if err != nil {
 		return domain.SpotifyTrack{}, err
@@ -51,6 +57,7 @@ func (s spotifyTrackProvider) GetTrack(ctx context.Context, song domain.Song) (d
 }
 
 type match struct {
+	item               Track
 	track              domain.SpotifyTrack
 	artistPercentMatch float64
 	trackPercentMatch  float64
@@ -78,6 +85,8 @@ func findSongTrackMatch(tracks TrackCollection, song domain.Song) (domain.Spotif
 
 	if tracks.Total == 1 {
 		t := tracks.Items[0]
+		slog.Info("match track found", slog.Any("match", t))
+
 		return domain.NewSpotifyTrack(song.ID(), t.ID, t.URI), nil
 	}
 
@@ -85,6 +94,7 @@ func findSongTrackMatch(tracks TrackCollection, song domain.Song) (domain.Spotif
 
 	for _, t := range tracks.Items {
 		m := match{
+			item:               t,
 			track:              domain.NewSpotifyTrack(song.ID(), t.ID, t.URI),
 			trackPercentMatch:  stringSimilarity(song.Track(), t.Name),
 			artistPercentMatch: percentArtistMatch(t.Artists, song.Artist()),
@@ -112,7 +122,10 @@ func findSongTrackMatch(tracks TrackCollection, song domain.Song) (domain.Spotif
 		return domain.SpotifyTrack{}, errMatchBelowThreshold
 	}
 
-	slog.Info("partial match track found", slog.Any("percent", matches[0].weightedAverage()))
+	slog.Info("partial match track found",
+		slog.Any("percent", matches[0].weightedAverage()),
+		slog.Any("match", matches[0].item),
+	)
 
 	return matches[0].track, nil
 }

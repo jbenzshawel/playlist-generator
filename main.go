@@ -5,12 +5,22 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"log"
+	"log/slog"
+	"net/http"
+	"net/url"
 	"time"
 
-	_ "modernc.org/sqlite" // Registers the "sqlite" driver
+	_ "modernc.org/sqlite"
 
-	"github.com/jbenzshawel/playlist-generator/internal/app"
+	"github.com/jbenzshawel/playlist-generator/internal/app/playlists/spotify"
+	"github.com/jbenzshawel/playlist-generator/internal/app/sources/studioone"
 	"github.com/jbenzshawel/playlist-generator/internal/config"
+	"github.com/jbenzshawel/playlist-generator/internal/domain"
+	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient/oauth"
+	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/spotifyclient"
+	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/studiooneclient"
+	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/storage"
 )
 
 const dsn = "file:db/app.db?_busy_timeout=5000&_pragma=journal_mode(WAL)"
@@ -33,6 +43,102 @@ func main() {
 
 	ctx := context.Background()
 
-	app.NewApplication(cfg, db).
-		Run(ctx, *dateFlag)
+	err = storage.InitializeSchema(ctx, db)
+	if err != nil {
+		panic(fmt.Errorf("failed to initialize schema: %w", err))
+	}
+
+	go func() {
+		err := http.ListenAndServe(":3000", nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	spotifyClient := setupSpotifyClient(cfg)
+
+	repos := newRepositories(db)
+	sources := newSources(cfg, repos)
+
+	err = sources.studioOne.DownloadSongList(ctx, *dateFlag)
+	if err != nil {
+		slog.Error("studio one download song list error", slog.Any("error", err))
+	}
+
+	// TODO: Run in background?
+	err = spotify.NewTrackUpdater(spotifyClient, repos.spotifyTracks).UpdateSpotifyTracks(ctx)
+}
+
+func setupSpotifyClient(cfg config.Config) *spotifyclient.Client {
+	// TODO: conditionally get auth code depending on mode
+	// May have configuration mode that runs in background downloading song lists
+	// and populating them with spotify metadata
+	auth := oauth.NewAuthenticator(oauth.AuthenticatorConfig{
+		ClientID:     cfg.Clients.SpotifyClient.ClientID,
+		ClientSecret: cfg.Clients.SpotifyClient.ClientSecret,
+		AuthURL:      cfg.Clients.SpotifyClient.AuthURL,
+		TokenURL:     cfg.Clients.SpotifyClient.TokenURL,
+		RedirectURL:  "http://127.0.0.1:3000/callback",
+		Scopes: []string{
+			"playlist-read-private",
+			"playlist-modify-private",
+		},
+	})
+
+	loginURL, err := auth.AuthCodeURL()
+	if err != nil {
+		panic(fmt.Errorf("auth code url failed: %w", err))
+	}
+
+	chOAuthClient := make(chan *http.Client)
+	completeAuthHandler := auth.GetAuthCodeCallbackHandler(chOAuthClient)
+
+	http.HandleFunc("/callback", completeAuthHandler)
+
+	fmt.Printf("Click the following URL to complete spotify login: %s\n", loginURL)
+
+	spotifyOAuthClient := <-chOAuthClient
+
+	spotifyClientBaseURL, err := url.Parse(cfg.SpotifyClient.BaseURL)
+	if err != nil {
+		panic(fmt.Errorf("failed to parse SpotifyClient.BaseURL: %w", err))
+	}
+
+	return spotifyclient.New(spotifyclient.Config{
+		BaseURL: spotifyClientBaseURL,
+		Client:  spotifyOAuthClient,
+	})
+}
+
+type repositories struct {
+	songs         domain.SongRepository
+	studioOne     domain.SongSourceRepository
+	spotifyTracks domain.SpotifyTrackRepository
+}
+
+func newRepositories(db *sql.DB) repositories {
+	return repositories{
+		songs:         storage.NewSongSqlRepository(db),
+		studioOne:     storage.NewSongSourceSqlRepository(db),
+		spotifyTracks: storage.NewSpotifyTracksSqlRepository(db),
+	}
+}
+
+type downloader struct {
+	studioOne studioone.Downloader
+}
+
+func newSources(cfg config.Config, repos repositories) downloader {
+	iprBaseURL, err := url.Parse(cfg.IowaPublicRadio.BaseURL)
+	if err != nil {
+		panic(fmt.Errorf("failed to parse IowaPublicRadio.BaseURL: %w", err))
+	}
+
+	iprClient := studiooneclient.New(studiooneclient.Config{
+		BaseURL: iprBaseURL,
+	})
+
+	return downloader{
+		studioOne: studioone.NewDownloader(iprClient, repos.songs, repos.studioOne),
+	}
 }
