@@ -1,5 +1,10 @@
 package spotify
 
+import (
+	"log/slog"
+	"strings"
+)
+
 type SearchTrackResponse struct {
 	Tracks TrackCollection `json:"tracks"`
 }
@@ -17,6 +22,18 @@ type Track struct {
 	URI         string      `json:"uri"`
 	IsPlayable  bool        `json:"is_playable"`
 	Name        string      `json:"name"`
+}
+
+func (t Track) LogValue() slog.Value {
+	var artists []string
+	for _, a := range t.Artists {
+		artists = append(artists, a.Name)
+	}
+
+	return slog.GroupValue(
+		slog.String("artist", strings.Join(artists, ", ")),
+		slog.String("track", t.Name),
+	)
 }
 
 type AlbumType string
