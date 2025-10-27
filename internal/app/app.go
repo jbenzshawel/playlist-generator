@@ -84,15 +84,19 @@ func (a Application) Run(ctx context.Context, date string) {
 		panic(fmt.Errorf("failed to initialize schema: %w", err))
 	}
 
-	err = a.Sources.StudioOne.ListSongs.Execute(ctx, studioone.SongListCommand{Date: date})
+	_, err = a.Sources.StudioOne.ListSongs.Execute(ctx, studioone.SongListCommand{Date: date})
 	if err != nil {
 		slog.Error("studio one download song list error", slog.Any("error", err))
 	}
 
-	err = a.Playlists.Spotify.UpdateTracks.Execute(ctx, spotify.UpdateTracksCommand{})
+	_, err = a.Playlists.Spotify.UpdateTracks.Execute(ctx, spotify.UpdateTracksCommand{})
 	if err != nil {
 		slog.Error("spotify track update error", slog.Any("error", err))
 	}
+
+	_, err = a.Playlists.Spotify.CreatePlaylist.Execute(ctx, spotify.CreatePlaylistCommand{
+		Date: date,
+	})
 }
 
 func setupSpotifyClient(cfg config.Config) *spotifyclient.Client {

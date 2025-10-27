@@ -4,6 +4,10 @@ import (
 	"context"
 )
 
-type CommandHandler[T any] interface {
-	Execute(ctx context.Context, cmd T) error
+type CommandWithResultHandler[TParam, TRes any] interface {
+	Execute(ctx context.Context, cmd TParam) (TRes, error)
+}
+
+type CommandHandler[TParam any] interface {
+	CommandWithResultHandler[TParam, any]
 }

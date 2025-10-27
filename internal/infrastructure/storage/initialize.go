@@ -16,6 +16,16 @@ func InitializeSchema(ctx context.Context, db *sql.DB) error {
 		return err
 	}
 
+	_, err = db.ExecContext(ctx, playlistTypeSchema)
+	if err != nil {
+		return err
+	}
+
+	err = initPlaylistTypes(db)
+	if err != nil {
+		return err
+	}
+
 	_, err = db.ExecContext(ctx, songSchema)
 	if err != nil {
 		return err
@@ -27,6 +37,11 @@ func InitializeSchema(ctx context.Context, db *sql.DB) error {
 	}
 
 	_, err = db.ExecContext(ctx, spotifyTrackSchema)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.ExecContext(ctx, playlistsSchema)
 	if err != nil {
 		return err
 	}

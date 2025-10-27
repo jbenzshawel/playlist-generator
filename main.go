@@ -4,9 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"time"
-
 	_ "modernc.org/sqlite"
+	"time"
 
 	"github.com/jbenzshawel/playlist-generator/internal/app"
 	"github.com/jbenzshawel/playlist-generator/internal/app/config"

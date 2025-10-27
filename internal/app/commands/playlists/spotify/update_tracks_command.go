@@ -14,11 +14,11 @@ type UpdateTracksCommand struct{}
 
 type UpdateTracksCommandHandler decorator.CommandHandler[UpdateTracksCommand]
 
-func NewUpdateTracksCommandHandler(searcher TrackSearcher, repository domain.Repository) UpdateTracksCommandHandler {
+func NewUpdateTracksCommandHandler(searcher trackSearcher, repository domain.Repository) UpdateTracksCommandHandler {
 	return decorator.ApplyDBTransactionDecorator(
 		&trackUpdateCommand{
 			provider:   NewSpotifyTrackProvider(searcher),
-			repository: repository.SpotifyTracks(),
+			repository: repository.SpotifyTrack(),
 		},
 		repository,
 	)
@@ -33,10 +33,10 @@ type trackUpdateCommand struct {
 	repository domain.SpotifyTrackRepository
 }
 
-func (t *trackUpdateCommand) Execute(ctx context.Context, _ UpdateTracksCommand) error {
+func (t *trackUpdateCommand) Execute(ctx context.Context, _ UpdateTracksCommand) (any, error) {
 	songs, err := t.repository.GetUnknownSongs(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// anything higher than 6 workers starts to get rate limited
@@ -68,8 +68,8 @@ func (t *trackUpdateCommand) Execute(ctx context.Context, _ UpdateTracksCommand)
 		return nil
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return nil, nil
 }

@@ -26,10 +26,6 @@ type songSourceSqlRepository struct {
 	tx *sql.Tx
 }
 
-func newSongSourceSqlRepository() *songSourceSqlRepository {
-	return &songSourceSqlRepository{}
-}
-
 func (r *songSourceSqlRepository) SetTransaction(tx *sql.Tx) {
 	r.tx = tx
 }
