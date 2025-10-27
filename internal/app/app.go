@@ -97,6 +97,9 @@ func (a Application) Run(ctx context.Context, date string) {
 	_, err = a.Playlists.Spotify.CreatePlaylist.Execute(ctx, spotify.CreatePlaylistCommand{
 		Date: date,
 	})
+	if err != nil {
+		slog.Error("create spotify playlist error", slog.Any("error", err))
+	}
 }
 
 func setupSpotifyClient(cfg config.Config) *spotifyclient.Client {

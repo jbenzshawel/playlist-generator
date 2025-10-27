@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
@@ -44,10 +43,10 @@ func (r *playlistSqlRepository) GetPlaylistByID(ctx context.Context, id string) 
 	return p, nil
 }
 
-func (r *playlistSqlRepository) GetPlaylistByMonth(ctx context.Context, playlistType domain.PlaylistType, year int, month time.Month) (domain.Playlist, error) {
+func (r *playlistSqlRepository) GetPlaylistByDate(ctx context.Context, playlistType domain.PlaylistType, date string) (domain.Playlist, error) {
 	row := r.tx.QueryRowContext(ctx, `SELECT id, uri, name, date, source_type_id, playlist_type_id, last_day_synced, created
 		FROM playlists WHERE playlist_type_id = ? AND date = ?`,
-		playlistType, fmt.Sprintf("%d-%d", year, month),
+		playlistType, date,
 	)
 
 	p, err := r.scanPlaylist(row)
@@ -88,9 +87,9 @@ func (r *playlistSqlRepository) scanPlaylist(row *sql.Row) (domain.Playlist, err
 func (r *playlistSqlRepository) Insert(ctx context.Context, playlist domain.Playlist) error {
 	_, err := r.tx.ExecContext(
 		ctx,
-		`INSERT INTO platlists (id, uri, name, date, source_type_id, playlist_type_id)
-			VALUES (?,?, ?,?,?, ?);`,
-		playlist.ID(), playlist.URI(), playlist.Name(), playlist.Date(), playlist.SourceType(), playlist.PlaylistType(),
+		`INSERT INTO playlists (id, uri, name, date, source_type_id, playlist_type_id, last_day_synced, created)
+			VALUES (?,?, ?, ?,?, ?, ?, ?);`,
+		playlist.ID(), playlist.URI(), playlist.Name(), playlist.Date(), playlist.SourceType(), playlist.PlaylistType(), "", timeToUTCString(playlist.Created()),
 	)
 	if err != nil {
 		return err

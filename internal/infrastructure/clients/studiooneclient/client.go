@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/url"
 
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/studioone"
+	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/studioone/models"
 	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient"
 	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient/decode"
 )
@@ -25,20 +25,20 @@ func New(cfg Config) *client {
 	}
 }
 
-func (c *client) GetSongs(ctx context.Context, date string) (studioone.Collection, error) {
+func (c *client) GetSongs(ctx context.Context, date string) (models.Collection, error) {
 	resp, err := c.Get(ctx, "/day", httpclient.WithQuery(map[string]string{
 		"format": "json",
 		"date":   date,
 	}))
 	if err != nil {
-		return studioone.Collection{}, err
+		return models.Collection{}, err
 	}
 
 	defer resp.Body.Close()
 
-	collection, err := decode.JSON[studioone.Collection](resp)
+	collection, err := decode.JSON[models.Collection](resp)
 	if err != nil {
-		return studioone.Collection{}, err
+		return models.Collection{}, err
 	}
 
 	return collection, nil

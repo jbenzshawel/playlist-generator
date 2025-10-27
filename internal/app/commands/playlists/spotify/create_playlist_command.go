@@ -3,12 +3,18 @@ package spotify
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"time"
+
+	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
 	"github.com/jbenzshawel/playlist-generator/internal/common/decorator"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
-	"time"
 )
 
-const dayFormat = "2006-01-02"
+const (
+	dayFormat       = "2006-01-02"
+	yearMonthFormat = "2006-01"
+)
 
 type CreatePlaylistCommand struct {
 	Date string
@@ -34,8 +40,8 @@ func NewCreatePlaylistCommand(
 }
 
 type creator interface {
-	CurrentUser(ctx context.Context) (User, error)
-	CreatePlaylist(ctx context.Context, userID string, request CreatePlaylistRequest) (SimplePlaylist, error)
+	CurrentUser(ctx context.Context) (models.User, error)
+	CreatePlaylist(ctx context.Context, userID string, request models.CreatePlaylistRequest) (models.SimplePlaylist, error)
 }
 
 type createPlaylistCommand struct {
@@ -49,12 +55,15 @@ func (c *createPlaylistCommand) Execute(ctx context.Context, cmd CreatePlaylistC
 		return CreatePlaylistCommandResult{}, fmt.Errorf("invalid create playlist date: %w", err)
 	}
 
-	p, err := c.playlistRepository.GetPlaylistByMonth(ctx, domain.SpotifyPlaylistType, date.Year(), date.Month())
+	playlistDate := date.Format(yearMonthFormat)
+
+	p, err := c.playlistRepository.GetPlaylistByDate(ctx, domain.SpotifyPlaylistType, playlistDate)
 	if err != nil {
 		return CreatePlaylistCommandResult{}, err
 	}
 
 	if !p.IsZero() {
+		slog.Info("existing spotify playlist found", slog.Any("playlist", p))
 		return CreatePlaylistCommandResult{Playlist: p}, nil
 	}
 
@@ -63,19 +72,28 @@ func (c *createPlaylistCommand) Execute(ctx context.Context, cmd CreatePlaylistC
 		return CreatePlaylistCommandResult{}, err
 	}
 
-	spotifyPlaylist, err := c.creator.CreatePlaylist(ctx, u.ID, CreatePlaylistRequest{
+	spotifyPlaylist, err := c.creator.CreatePlaylist(ctx, u.ID, models.CreatePlaylistRequest{
 		Name: fmt.Sprintf("Studio One %d-%d", date.Year(), date.Month()),
 	})
 	if err != nil {
 		return CreatePlaylistCommandResult{}, err
 	}
 
-	p = domain.NewPlaylist(spotifyPlaylist.ID, spotifyPlaylist.URI, spotifyPlaylist.Name, cmd.Date, domain.SpotifyPlaylistType, domain.StudioOneSourceType)
+	p = domain.NewPlaylist(
+		spotifyPlaylist.ID,
+		spotifyPlaylist.URI,
+		spotifyPlaylist.Name,
+		playlistDate,
+		domain.SpotifyPlaylistType,
+		domain.StudioOneSourceType,
+	)
 
 	err = c.playlistRepository.Insert(ctx, p)
 	if err != nil {
 		return CreatePlaylistCommandResult{}, err
 	}
+
+	slog.Info("new spotify playlist created", slog.Any("playlist", p))
 
 	return CreatePlaylistCommandResult{Playlist: p}, nil
 }

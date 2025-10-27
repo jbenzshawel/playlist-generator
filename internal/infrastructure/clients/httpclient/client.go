@@ -129,6 +129,8 @@ func (c *retryingClient) Post(ctx context.Context, endpoint string, options ...R
 		return nil, err
 	}
 
+	req.Header.Set("Content-Type", "application/json")
+
 	resp, err := c.Do(req)
 	if err != nil {
 		return nil, err

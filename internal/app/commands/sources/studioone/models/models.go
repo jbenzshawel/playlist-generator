@@ -1,4 +1,4 @@
-package studioone
+package models
 
 type Collection struct {
 	Items []Item `json:"onToday"`

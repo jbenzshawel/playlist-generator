@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/studioone/models"
+
 	"github.com/jbenzshawel/playlist-generator/internal/common/decorator"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
@@ -34,7 +36,7 @@ func NewSongListCommand(
 }
 
 type songGetter interface {
-	GetSongs(ctx context.Context, date string) (Collection, error)
+	GetSongs(ctx context.Context, date string) (models.Collection, error)
 }
 
 type songListCommand struct {

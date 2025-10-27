@@ -1,4 +1,4 @@
-package spotify
+package models
 
 import (
 	"log/slog"

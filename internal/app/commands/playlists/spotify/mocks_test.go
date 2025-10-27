@@ -7,6 +7,8 @@ package spotify
 import (
 	"context"
 
+	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -38,22 +40,22 @@ func (_m *mocktrackSearcher) EXPECT() *mocktrackSearcher_Expecter {
 }
 
 // SearchTrack provides a mock function for the type mocktrackSearcher
-func (_mock *mocktrackSearcher) SearchTrack(ctx context.Context, artist string, track string, album string) (SearchTrackResponse, error) {
+func (_mock *mocktrackSearcher) SearchTrack(ctx context.Context, artist string, track string, album string) (models.SearchTrackResponse, error) {
 	ret := _mock.Called(ctx, artist, track, album)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SearchTrack")
 	}
 
-	var r0 SearchTrackResponse
+	var r0 models.SearchTrackResponse
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, string) (SearchTrackResponse, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, string) (models.SearchTrackResponse, error)); ok {
 		return returnFunc(ctx, artist, track, album)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, string) SearchTrackResponse); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, string) models.SearchTrackResponse); ok {
 		r0 = returnFunc(ctx, artist, track, album)
 	} else {
-		r0 = ret.Get(0).(SearchTrackResponse)
+		r0 = ret.Get(0).(models.SearchTrackResponse)
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = returnFunc(ctx, artist, track, album)
@@ -105,12 +107,12 @@ func (_c *mocktrackSearcher_SearchTrack_Call) Run(run func(ctx context.Context, 
 	return _c
 }
 
-func (_c *mocktrackSearcher_SearchTrack_Call) Return(searchTrackResponse SearchTrackResponse, err error) *mocktrackSearcher_SearchTrack_Call {
+func (_c *mocktrackSearcher_SearchTrack_Call) Return(searchTrackResponse models.SearchTrackResponse, err error) *mocktrackSearcher_SearchTrack_Call {
 	_c.Call.Return(searchTrackResponse, err)
 	return _c
 }
 
-func (_c *mocktrackSearcher_SearchTrack_Call) RunAndReturn(run func(ctx context.Context, artist string, track string, album string) (SearchTrackResponse, error)) *mocktrackSearcher_SearchTrack_Call {
+func (_c *mocktrackSearcher_SearchTrack_Call) RunAndReturn(run func(ctx context.Context, artist string, track string, album string) (models.SearchTrackResponse, error)) *mocktrackSearcher_SearchTrack_Call {
 	_c.Call.Return(run)
 	return _c
 }

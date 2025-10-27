@@ -2,12 +2,15 @@ package domain
 
 import (
 	"context"
+	"log/slog"
 	"time"
 )
 
 type PlaylistRepository interface {
 	GetPlaylistByID(ctx context.Context, id string) (Playlist, error)
-	GetPlaylistByMonth(ctx context.Context, playlistType PlaylistType, year int, month time.Month) (Playlist, error)
+	// GetPlaylistByDate returns a playlist that matches a type and date. Note playlists could be scoped
+	// to month, day, or year so date is intentionally a string. Follow YYYY-MM-DD convention.
+	GetPlaylistByDate(ctx context.Context, playlistType PlaylistType, date string) (Playlist, error)
 
 	Insert(ctx context.Context, playlist Playlist) error
 	SetLastDaySynced(ctx context.Context, id, lastDaySynced string) error
@@ -83,4 +86,13 @@ func (p Playlist) LastDaySynced() string {
 
 func (p Playlist) Created() time.Time {
 	return p.created
+}
+
+func (s Playlist) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.String("date", s.Date()),
+		slog.String("lastDaySynced", s.LastDaySynced()),
+		slog.String("name", s.Name()),
+		slog.String("uri", s.URI()),
+	)
 }

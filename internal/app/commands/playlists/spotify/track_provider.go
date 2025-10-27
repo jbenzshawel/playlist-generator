@@ -7,6 +7,8 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
+
 	"github.com/jbenzshawel/playlist-generator/internal/common/compare"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
@@ -19,7 +21,7 @@ var (
 )
 
 type trackSearcher interface {
-	SearchTrack(ctx context.Context, artist, track, album string) (SearchTrackResponse, error)
+	SearchTrack(ctx context.Context, artist, track, album string) (models.SearchTrackResponse, error)
 }
 
 func NewSpotifyTrackProvider(s trackSearcher) *spotifyTrackProvider {
@@ -57,7 +59,7 @@ func (s *spotifyTrackProvider) GetTrack(ctx context.Context, song domain.Song) (
 }
 
 type match struct {
-	item               Track
+	item               models.Track
 	track              domain.SpotifyTrack
 	artistPercentMatch float64
 	trackPercentMatch  float64
@@ -80,7 +82,7 @@ func (m match) weightedAverage() float64 {
 	return m.artistPercentMatch*weightArtist + m.trackPercentMatch*weightTrack + m.albumPercentMatch*weightAlbum
 }
 
-func findSongTrackMatch(tracks TrackCollection, song domain.Song) (domain.SpotifyTrack, error) {
+func findSongTrackMatch(tracks models.TrackCollection, song domain.Song) (domain.SpotifyTrack, error) {
 	slog.Info("spotify search tracks found", slog.Int("count", tracks.Total))
 
 	if tracks.Total == 1 {
@@ -130,15 +132,15 @@ func findSongTrackMatch(tracks TrackCollection, song domain.Song) (domain.Spotif
 	return matches[0].track, nil
 }
 
-func percentAlbumMatch(trackAlbum Album, song domain.Song) float64 {
-	if trackAlbum.AlbumType == SingleAlbumType && strings.HasPrefix(song.Album(), song.Track()) {
+func percentAlbumMatch(trackAlbum models.Album, song domain.Song) float64 {
+	if trackAlbum.AlbumType == models.SingleAlbumType && strings.HasPrefix(song.Album(), song.Track()) {
 		return 100.0
 	}
 
 	return stringSimilarity(song.Album(), trackAlbum.Name)
 }
 
-func percentArtistMatch(artists []Artist, artist string) float64 {
+func percentArtistMatch(artists []models.Artist, artist string) float64 {
 	if len(artists) == 1 {
 		return stringSimilarity(artist, artists[0].Name)
 	}
