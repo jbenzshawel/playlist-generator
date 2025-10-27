@@ -66,7 +66,7 @@ func main() {
 	}
 
 	// TODO: Run in background?
-	err = spotify.NewUpdateTracksHandler(spotifyClient, repository).Execute(ctx, spotify.UpdateTracks{})
+	err = spotify.NewUpdateTracksCommandHandler(spotifyClient, repository).Execute(ctx, spotify.UpdateTracksCommand{})
 	if err != nil {
 		slog.Error("spotify track update error", slog.Any("error", err))
 	}

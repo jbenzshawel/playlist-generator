@@ -13,9 +13,9 @@ type repository struct {
 	db *sql.DB
 	tx *sql.Tx
 
-	songs         *SongSqlRepository
-	songSource    *SongSourceSqlRepository
-	spotifyTracks *SpotifyTrackSqlRepository
+	songs         *songSqlRepository
+	songSource    *songSourceSqlRepository
+	spotifyTracks *spotifyTrackSqlRepository
 }
 
 func (r *repository) Songs() domain.SongRepository {
@@ -55,8 +55,8 @@ func (r *repository) Rollback() error {
 func NewRepository(db *sql.DB) *repository {
 	return &repository{
 		db:            db,
-		songs:         NewSongSqlRepository(),
-		songSource:    NewSongSourceSqlRepository(),
-		spotifyTracks: NewSpotifyTracksSqlRepository(),
+		songs:         newSongSqlRepository(),
+		songSource:    newSongSourceSqlRepository(),
+		spotifyTracks: newSpotifyTracksSqlRepository(),
 	}
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
 
-var _ domain.SongRepository = (*SongSqlRepository)(nil)
+var _ domain.SongRepository = (*songSqlRepository)(nil)
 
 var songSchema string = `CREATE TABLE IF NOT EXISTS songs (
     id TEXT PRIMARY KEY,            -- UUID string (e.g., 550e8400-e29b-41d4-a716-446655440000)
@@ -20,19 +20,19 @@ var songSchema string = `CREATE TABLE IF NOT EXISTS songs (
     created TEXT NOT NULL           -- store timestamps as ISO8601 strings (UTC)
 );`
 
-type SongSqlRepository struct {
+type songSqlRepository struct {
 	tx *sql.Tx
 }
 
-func NewSongSqlRepository() *SongSqlRepository {
-	return &SongSqlRepository{}
+func newSongSqlRepository() *songSqlRepository {
+	return &songSqlRepository{}
 }
 
-func (r *SongSqlRepository) SetTransaction(tx *sql.Tx) {
+func (r *songSqlRepository) SetTransaction(tx *sql.Tx) {
 	r.tx = tx
 }
 
-func (r *SongSqlRepository) BulkInsert(ctx context.Context, songs []domain.Song) error {
+func (r *songSqlRepository) BulkInsert(ctx context.Context, songs []domain.Song) error {
 	for _, s := range songs {
 		_, err := r.tx.ExecContext(
 			ctx,

@@ -10,7 +10,7 @@ import (
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
 
-var _ domain.SpotifyTrackRepository = (*SpotifyTrackSqlRepository)(nil)
+var _ domain.SpotifyTrackRepository = (*spotifyTrackSqlRepository)(nil)
 
 // TODO: Delete match not found?
 
@@ -22,19 +22,19 @@ var spotifyTrackSchema string = `CREATE TABLE IF NOT EXISTS spotify_tracks (
     PRIMARY KEY (id, song_id)
 );`
 
-type SpotifyTrackSqlRepository struct {
+type spotifyTrackSqlRepository struct {
 	tx *sql.Tx
 }
 
-func NewSpotifyTracksSqlRepository() *SpotifyTrackSqlRepository {
-	return &SpotifyTrackSqlRepository{}
+func newSpotifyTracksSqlRepository() *spotifyTrackSqlRepository {
+	return &spotifyTrackSqlRepository{}
 }
 
-func (r *SpotifyTrackSqlRepository) SetTransaction(tx *sql.Tx) {
+func (r *spotifyTrackSqlRepository) SetTransaction(tx *sql.Tx) {
 	r.tx = tx
 }
 
-func (r *SpotifyTrackSqlRepository) GetUnknownSongs(ctx context.Context) ([]domain.Song, error) {
+func (r *spotifyTrackSqlRepository) GetUnknownSongs(ctx context.Context) ([]domain.Song, error) {
 	rows, err := r.tx.QueryContext(
 		ctx,
 		`SELECT songs.* 
@@ -86,7 +86,7 @@ func (r *SpotifyTrackSqlRepository) GetUnknownSongs(ctx context.Context) ([]doma
 	return results, nil
 }
 
-func (r SpotifyTrackSqlRepository) Insert(ctx context.Context, track domain.SpotifyTrack) error {
+func (r spotifyTrackSqlRepository) Insert(ctx context.Context, track domain.SpotifyTrack) error {
 	_, err := r.tx.ExecContext(
 		ctx,
 		`INSERT INTO spotify_tracks (id, uri, song_id, match_not_found)
