@@ -20,7 +20,7 @@ type SongListCommand struct {
 type SongListCommandHandler decorator.CommandHandler[SongListCommand]
 
 func NewSongListCommand(
-	provider queryer,
+	provider songGetter,
 	repository domain.Repository,
 ) SongListCommandHandler {
 	return decorator.ApplyDBTransactionDecorator(
@@ -33,12 +33,12 @@ func NewSongListCommand(
 	)
 }
 
-type queryer interface {
+type songGetter interface {
 	GetSongs(ctx context.Context, date string) (Collection, error)
 }
 
 type songListCommand struct {
-	queryer            queryer
+	queryer            songGetter
 	songRepository     domain.SongRepository
 	pubRadioRepository domain.SongSourceRepository
 }

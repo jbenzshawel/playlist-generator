@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/jbenzshawel/playlist-generator/internal/app/playlists/spotify"
+	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify"
 	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient"
 	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient/decode"
 )

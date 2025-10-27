@@ -2,6 +2,7 @@ package storage
 
 import (
 	"database/sql"
+
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
 
