@@ -10,15 +10,15 @@ import (
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
 
-type UpdateTracks struct{}
+type UpdateTracksCommand struct{}
 
-type UpdateTracksHandler decorator.CommandHandler[UpdateTracks]
+type UpdateTracksCommandHandler decorator.CommandHandler[UpdateTracksCommand]
 
-func NewUpdateTracksHandler(searcher TrackSearcher, repository domain.Repository) UpdateTracksHandler {
+func NewUpdateTracksCommandHandler(searcher trackSearcher, repository domain.Repository) UpdateTracksCommandHandler {
 	return decorator.ApplyDBTransactionDecorator(
 		&trackUpdateCommand{
 			provider:   NewSpotifyTrackProvider(searcher),
-			repository: repository.SpotifyTracks(),
+			repository: repository.SpotifyTrack(),
 		},
 		repository,
 	)
@@ -33,10 +33,10 @@ type trackUpdateCommand struct {
 	repository domain.SpotifyTrackRepository
 }
 
-func (t *trackUpdateCommand) Execute(ctx context.Context, _ UpdateTracks) error {
+func (t *trackUpdateCommand) Execute(ctx context.Context, _ UpdateTracksCommand) (any, error) {
 	songs, err := t.repository.GetUnknownSongs(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// anything higher than 6 workers starts to get rate limited
@@ -68,8 +68,8 @@ func (t *trackUpdateCommand) Execute(ctx context.Context, _ UpdateTracks) error 
 		return nil
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return nil, nil
 }

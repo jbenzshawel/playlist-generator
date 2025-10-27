@@ -2,11 +2,12 @@ package storage
 
 import (
 	"database/sql"
+
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
 
 var sourceTypeSchema string = `CREATE TABLE IF NOT EXISTS source_types (
-    id TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY,
     name TEXT NOT NULL
 );`
 

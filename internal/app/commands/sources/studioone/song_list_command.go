@@ -20,34 +20,34 @@ type SongListCommand struct {
 type SongListCommandHandler decorator.CommandHandler[SongListCommand]
 
 func NewSongListCommand(
-	provider queryer,
+	provider songGetter,
 	repository domain.Repository,
 ) SongListCommandHandler {
 	return decorator.ApplyDBTransactionDecorator(
 		&songListCommand{
 			queryer:            provider,
-			songRepository:     repository.Songs(),
+			songRepository:     repository.Song(),
 			pubRadioRepository: repository.SongSource(),
 		},
 		repository,
 	)
 }
 
-type queryer interface {
+type songGetter interface {
 	GetSongs(ctx context.Context, date string) (Collection, error)
 }
 
 type songListCommand struct {
-	queryer            queryer
+	queryer            songGetter
 	songRepository     domain.SongRepository
 	pubRadioRepository domain.SongSourceRepository
 }
 
-func (d *songListCommand) Execute(ctx context.Context, cmd SongListCommand) error {
+func (d *songListCommand) Execute(ctx context.Context, cmd SongListCommand) (any, error) {
 	slog.Info("downloading studio one songs", slog.Any("date", cmd.Date))
 	collection, err := d.queryer.GetSongs(ctx, cmd.Date)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var songs []domain.Song
@@ -84,13 +84,13 @@ func (d *songListCommand) Execute(ctx context.Context, cmd SongListCommand) erro
 
 	err = d.songRepository.BulkInsert(ctx, songs)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = d.pubRadioRepository.BulkInsert(ctx, pubRadioSongs)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return nil, nil
 }

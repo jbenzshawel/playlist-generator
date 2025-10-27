@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/jbenzshawel/playlist-generator/internal/app/playlists/spotify"
+	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify"
 	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient"
 	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient/decode"
 )
@@ -83,4 +83,20 @@ func (c *Client) CreatePlaylist(ctx context.Context, userID string, request spot
 	}
 
 	return playlist, nil
+}
+
+func (c *Client) AddItemsToPlaylist(ctx context.Context, playlistID string, request spotify.AddItemsToPlaylistRequest) (string, error) {
+	resp, err := c.Post(ctx, fmt.Sprintf("/playlist/%s/tracks", playlistID), httpclient.WithJSONBody(request))
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	playlist, err := decode.JSON[spotify.PlaylistSnapshot](resp)
+	if err != nil {
+		return "", err
+	}
+
+	return playlist.SnapshotID, nil
 }

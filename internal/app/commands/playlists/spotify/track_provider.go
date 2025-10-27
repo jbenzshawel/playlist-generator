@@ -18,18 +18,18 @@ var (
 	errMatchBelowThreshold = errors.New("match below threshold")
 )
 
-type TrackSearcher interface {
+type trackSearcher interface {
 	SearchTrack(ctx context.Context, artist, track, album string) (SearchTrackResponse, error)
 }
 
-func NewSpotifyTrackProvider(s TrackSearcher) *spotifyTrackProvider {
+func NewSpotifyTrackProvider(s trackSearcher) *spotifyTrackProvider {
 	return &spotifyTrackProvider{
 		searcher: s,
 	}
 }
 
 type spotifyTrackProvider struct {
-	searcher TrackSearcher
+	searcher trackSearcher
 }
 
 func (s *spotifyTrackProvider) GetTrack(ctx context.Context, song domain.Song) (domain.SpotifyTrack, error) {

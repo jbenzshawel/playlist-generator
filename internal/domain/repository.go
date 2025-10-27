@@ -3,9 +3,10 @@ package domain
 import "context"
 
 type Repository interface {
-	Songs() SongRepository
+	Playlist() PlaylistRepository
+	Song() SongRepository
 	SongSource() SongSourceRepository
-	SpotifyTracks() SpotifyTrackRepository
+	SpotifyTrack() SpotifyTrackRepository
 
 	Begin(ctx context.Context) error
 	Rollback() error

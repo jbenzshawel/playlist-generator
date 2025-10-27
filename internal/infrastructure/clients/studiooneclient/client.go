@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/url"
 
-	"github.com/jbenzshawel/playlist-generator/internal/app/sources/studioone"
+	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/studioone"
 	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient"
 	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient/decode"
 )

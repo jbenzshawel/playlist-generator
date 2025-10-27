@@ -13,21 +13,26 @@ type repository struct {
 	db *sql.DB
 	tx *sql.Tx
 
-	songs         *SongSqlRepository
-	songSource    *SongSourceSqlRepository
-	spotifyTracks *SpotifyTrackSqlRepository
+	song         *songSqlRepository
+	songSource   *songSourceSqlRepository
+	spotifyTrack *spotifyTrackSqlRepository
+	playlist     *playlistSqlRepository
 }
 
-func (r *repository) Songs() domain.SongRepository {
-	return r.songs
+func (r *repository) Song() domain.SongRepository {
+	return r.song
 }
 
 func (r *repository) SongSource() domain.SongSourceRepository {
 	return r.songSource
 }
 
-func (r *repository) SpotifyTracks() domain.SpotifyTrackRepository {
-	return r.spotifyTracks
+func (r *repository) SpotifyTrack() domain.SpotifyTrackRepository {
+	return r.spotifyTrack
+}
+
+func (r *repository) Playlist() domain.PlaylistRepository {
+	return r.playlist
 }
 
 func (r *repository) Begin(ctx context.Context) error {
@@ -37,9 +42,10 @@ func (r *repository) Begin(ctx context.Context) error {
 	}
 
 	r.tx = tx
-	r.songs.SetTransaction(tx)
+	r.song.SetTransaction(tx)
 	r.songSource.SetTransaction(tx)
-	r.spotifyTracks.SetTransaction(tx)
+	r.spotifyTrack.SetTransaction(tx)
+	r.playlist.SetTransaction(tx)
 
 	return nil
 }
@@ -54,9 +60,10 @@ func (r *repository) Rollback() error {
 
 func NewRepository(db *sql.DB) *repository {
 	return &repository{
-		db:            db,
-		songs:         NewSongSqlRepository(),
-		songSource:    NewSongSourceSqlRepository(),
-		spotifyTracks: NewSpotifyTracksSqlRepository(),
+		db:           db,
+		song:         &songSqlRepository{},
+		songSource:   &songSourceSqlRepository{},
+		spotifyTrack: &spotifyTrackSqlRepository{},
+		playlist:     &playlistSqlRepository{},
 	}
 }
