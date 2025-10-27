@@ -97,3 +97,11 @@ type SimplePlaylist struct {
 	Tracks        PlaylistTracks    `json:"tracks"`
 	URI           string            `json:"uri"`
 }
+
+type AddItemsToPlaylistRequest struct {
+	URIs []string `json:"uris"`
+}
+
+type PlaylistSnapshot struct {
+	SnapshotID string `json:"snapshot_id"`
+}
