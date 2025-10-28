@@ -15,7 +15,9 @@ import (
 
 func main() {
 	defaultDate := time.Now().Format(dateformat.YearMonthDay)
-	var dateFlag = flag.String("date", defaultDate, "the date to download songs for in YYYY-MM-DD")
+	dateFlag := flag.String("date", defaultDate, "the date to download songs for in YYYY-MM-DD")
+
+	flag.Parse()
 
 	cfg, err := config.Load()
 	if err != nil {
