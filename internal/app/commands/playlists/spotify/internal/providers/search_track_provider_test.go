@@ -280,7 +280,7 @@ func TestSearchTrackProvider_SearchTrack(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			searcher := newMocktrackSearcher(t)
+			searcher := NewMockTrackSearcher(t)
 			if tc.searchWithoutAlbum {
 				searcher.EXPECT().SearchTrack(ctx, tc.song.Artist(), tc.song.Track(), tc.song.Album()).Return(models.SearchTrackResponse{}, nil)
 				searcher.EXPECT().SearchTrack(ctx, tc.song.Artist(), tc.song.Track(), "").Return(tc.searchResults, nil)
