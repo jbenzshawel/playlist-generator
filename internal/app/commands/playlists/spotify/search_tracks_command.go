@@ -5,35 +5,36 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/internal/providers"
 	"github.com/jbenzshawel/playlist-generator/internal/common/async"
 	"github.com/jbenzshawel/playlist-generator/internal/common/decorator"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
 
-type UpdateTracksCommand struct{}
+type SearchTracksCommand struct{}
 
-type UpdateTracksCommandHandler decorator.CommandHandler[UpdateTracksCommand]
+type SearchTracksCommandHandler decorator.CommandHandler[SearchTracksCommand]
 
-func NewUpdateTracksCommandHandler(searcher trackSearcher, repository domain.Repository) UpdateTracksCommandHandler {
+func NewSearchTracksCommand(searcher providers.TrackSearcher, repository domain.Repository) SearchTracksCommandHandler {
 	return decorator.ApplyDBTransactionDecorator(
-		&trackUpdateCommand{
-			provider:   NewSpotifyTrackProvider(searcher),
+		&searchTracksCommandHandler{
+			provider:   providers.NewSearchTrackProvider(searcher),
 			repository: repository.SpotifyTrack(),
 		},
 		repository,
 	)
 }
 
-type provider interface {
-	GetTrack(ctx context.Context, song domain.Song) (domain.SpotifyTrack, error)
+type searchProvider interface {
+	SearchTrack(ctx context.Context, song domain.Song) (domain.SpotifyTrack, error)
 }
 
-type trackUpdateCommand struct {
-	provider   provider
+type searchTracksCommandHandler struct {
+	provider   searchProvider
 	repository domain.SpotifyTrackRepository
 }
 
-func (t *trackUpdateCommand) Execute(ctx context.Context, _ UpdateTracksCommand) (any, error) {
+func (t *searchTracksCommandHandler) Execute(ctx context.Context, _ SearchTracksCommand) (any, error) {
 	songs, err := t.repository.GetUnknownSongs(ctx)
 	if err != nil {
 		return nil, err
@@ -51,7 +52,7 @@ func (t *trackUpdateCommand) Execute(ctx context.Context, _ UpdateTracksCommand)
 		var err error
 		song := songs[idx]
 
-		track, err = t.provider.GetTrack(ctx, song)
+		track, err = t.provider.SearchTrack(ctx, song)
 		if err != nil {
 			slog.Warn("spotify track not found for song",
 				slog.Any("song", song),

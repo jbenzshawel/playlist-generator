@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
 	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient"
@@ -85,8 +86,27 @@ func (c *Client) CreatePlaylist(ctx context.Context, userID string, request mode
 	return playlist, nil
 }
 
+func (c *Client) GetPlaylistTracks(ctx context.Context, playlistID string, limit, offset int) (models.PlaylistTrackPage, error) {
+	resp, err := c.Get(ctx, fmt.Sprintf("/playlists/%s/tracks", playlistID), httpclient.WithQuery(map[string]string{
+		"limit":  strconv.Itoa(limit),
+		"offset": strconv.Itoa(offset),
+	}))
+	if err != nil {
+		return models.PlaylistTrackPage{}, err
+	}
+
+	defer resp.Body.Close()
+
+	page, err := decode.JSON[models.PlaylistTrackPage](resp)
+	if err != nil {
+		return models.PlaylistTrackPage{}, err
+	}
+
+	return page, nil
+}
+
 func (c *Client) AddItemsToPlaylist(ctx context.Context, playlistID string, request models.AddItemsToPlaylistRequest) (string, error) {
-	resp, err := c.Post(ctx, fmt.Sprintf("/playlist/%s/tracks", playlistID), httpclient.WithJSONBody(request))
+	resp, err := c.Post(ctx, fmt.Sprintf("/playlists/%s/tracks", playlistID), httpclient.WithJSONBody(request))
 	if err != nil {
 		return "", err
 	}

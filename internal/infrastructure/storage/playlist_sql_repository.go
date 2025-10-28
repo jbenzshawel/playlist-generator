@@ -101,8 +101,7 @@ func (r *playlistSqlRepository) Insert(ctx context.Context, playlist domain.Play
 func (r *playlistSqlRepository) SetLastDaySynced(ctx context.Context, id, lastDaySynced string) error {
 	_, err := r.tx.ExecContext(
 		ctx,
-		`UPDATE platlists SET last_day_synced = ? WHERE id = ?
-			VALUES (?,?);`,
+		`UPDATE playlists SET last_day_synced = ? WHERE id = ?;`,
 		lastDaySynced, id,
 	)
 	if err != nil {

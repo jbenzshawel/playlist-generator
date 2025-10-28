@@ -2,14 +2,16 @@ package domain
 
 import (
 	"context"
+	"fmt"
+	"github.com/jbenzshawel/playlist-generator/internal/common/dateformat"
 	"log/slog"
 	"time"
 )
 
 type PlaylistRepository interface {
 	GetPlaylistByID(ctx context.Context, id string) (Playlist, error)
-	// GetPlaylistByDate returns a playlist that matches a type and date. Note playlists could be scoped
-	// to month, day, or year so date is intentionally a string. Follow YYYY-MM-DD convention.
+	// GetPlaylistByDate returns a playlist that matches a type and date. Note playlists could
+	// eventually be scoped to month, day, or year so date is intentionally a string. Follow YYYY-MM-DD convention.
 	GetPlaylistByDate(ctx context.Context, playlistType PlaylistType, date string) (Playlist, error)
 
 	Insert(ctx context.Context, playlist Playlist) error
@@ -22,6 +24,7 @@ type Playlist struct {
 	uri           string
 	name          string
 	date          string
+	dateScope     PlaylistDateScope
 	playlistType  PlaylistType
 	sourceType    SourceType
 	lastDaySynced string
@@ -34,6 +37,7 @@ func NewPlaylist(id, uri, name, date string, playlistType PlaylistType, sourceTy
 		uri:          uri,
 		name:         name,
 		date:         date,
+		dateScope:    MonthPlaylistDateScope, // TODO: persist and support other scopes
 		playlistType: playlistType,
 		sourceType:   sourceType,
 		created:      time.Now(),
@@ -46,6 +50,7 @@ func NewPlaylistFromDB(id, uri, date, name string, playlistType PlaylistType, so
 		uri:           uri,
 		name:          name,
 		date:          date,
+		dateScope:     MonthPlaylistDateScope,
 		playlistType:  playlistType,
 		sourceType:    sourceType,
 		lastDaySynced: lastDaySynced,
@@ -70,6 +75,30 @@ func (p Playlist) Name() string {
 
 func (p Playlist) Date() string {
 	return p.date
+}
+
+func (p Playlist) DateScope() PlaylistDateScope {
+	return p.dateScope
+}
+
+// StartDate returns the inclusive playlist start date
+func (p Playlist) StartDate() string {
+	startDate := p.LastDaySynced()
+	if startDate == "" {
+		startDate = fmt.Sprintf("%s-01", p.Date()) // Date is in YYYY-MM format
+	}
+	return startDate
+}
+
+// EndDate returns the exclusive playlist end date
+func (p Playlist) EndDate() (string, error) {
+	t, err := time.Parse(dateformat.YearMonth, p.Date())
+	if err != nil {
+		return "", err
+	}
+
+	end := t.AddDate(0, 1, 0)
+	return fmt.Sprintf("%s-%s", end.Format(dateformat.YearMonth), "01"), nil
 }
 
 func (p Playlist) PlaylistType() PlaylistType {

@@ -10,10 +10,11 @@ import (
 
 	"github.com/jbenzshawel/playlist-generator/internal/app"
 	"github.com/jbenzshawel/playlist-generator/internal/app/config"
+	"github.com/jbenzshawel/playlist-generator/internal/common/dateformat"
 )
 
 func main() {
-	defaultDate := time.Now().Format("2006-01-02")
+	defaultDate := time.Now().Format(dateformat.YearMonthDay)
 	var dateFlag = flag.String("date", defaultDate, "the date to download songs for in YYYY-MM-DD")
 
 	cfg, err := config.Load()

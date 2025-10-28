@@ -3,17 +3,13 @@ package spotify
 import (
 	"context"
 	"fmt"
+	"github.com/jbenzshawel/playlist-generator/internal/common/dateformat"
 	"log/slog"
 	"time"
 
 	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
 	"github.com/jbenzshawel/playlist-generator/internal/common/decorator"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
-)
-
-const (
-	dayFormat       = "2006-01-02"
-	yearMonthFormat = "2006-01"
 )
 
 type CreatePlaylistCommand struct {
@@ -50,12 +46,12 @@ type createPlaylistCommand struct {
 }
 
 func (c *createPlaylistCommand) Execute(ctx context.Context, cmd CreatePlaylistCommand) (CreatePlaylistCommandResult, error) {
-	date, err := time.Parse(dayFormat, cmd.Date)
+	date, err := time.Parse(dateformat.YearMonthDay, cmd.Date)
 	if err != nil {
 		return CreatePlaylistCommandResult{}, fmt.Errorf("invalid create playlist date: %w", err)
 	}
 
-	playlistDate := date.Format(yearMonthFormat)
+	playlistDate := date.Format(dateformat.YearMonth)
 
 	p, err := c.playlistRepository.GetPlaylistByDate(ctx, domain.SpotifyPlaylistType, playlistDate)
 	if err != nil {

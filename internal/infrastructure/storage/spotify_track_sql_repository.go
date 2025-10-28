@@ -16,7 +16,7 @@ var spotifyTrackSchema string = `CREATE TABLE IF NOT EXISTS spotify_tracks (
     id TEXT,
     uri TEXT NOT NULL,
     song_id TEXT NOT NULL,
-    match_not_found INTEGER NOT NULL DEFAULT 0 CHECK(match_not_found IN (0,1)),
+    match_found INTEGER NOT NULL DEFAULT 0 CHECK(match_found IN (0,1)),
     PRIMARY KEY (id, song_id)
 );`
 
@@ -32,8 +32,9 @@ func (r *spotifyTrackSqlRepository) GetUnknownSongs(ctx context.Context) ([]doma
 	rows, err := r.tx.QueryContext(
 		ctx,
 		`SELECT song.id, song.artist, song.track, song.album, song.upc, song.song_hash, song.created
-		FROM song LEFT JOIN spotify_tracks ON song.id = spotify_tracks.song_id
-		WHERE spotify_tracks.uri IS NULL;`,
+			FROM song 
+			LEFT JOIN spotify_tracks ON song.id = spotify_tracks.song_id
+			WHERE spotify_tracks.uri IS NULL;`,
 	)
 	if err != nil {
 		return nil, err
@@ -80,12 +81,63 @@ func (r *spotifyTrackSqlRepository) GetUnknownSongs(ctx context.Context) ([]doma
 	return results, nil
 }
 
+func (r *spotifyTrackSqlRepository) GetTracksPlayedInRange(ctx context.Context, songSourceType domain.SourceType, startDate, endDate string) ([]domain.SpotifyTrack, error) {
+	rows, err := r.tx.QueryContext(
+		ctx,
+		`SELECT DISTINCT spotify_tracks.id, spotify_tracks.uri, spotify_tracks.song_id, spotify_tracks.match_found  
+			FROM songs
+			JOIN spotify_tracks ON songs.id = spotify_tracks.song_id
+			JOIN song_sources ON song_sources.song_hash = songs.song_hash
+			WHERE spotify_tracks.match_found = 1
+			  AND song_sources.source_type_id = ?
+			  AND song_sources.date_played >= ?
+			  AND song_sources.date_played < ?`,
+		songSourceType, startDate, endDate,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []domain.SpotifyTrack
+	for rows.Next() {
+		var (
+			id            string
+			uri           string
+			songIDStr     string
+			matchFoundInt int
+		)
+
+		if err := rows.Scan(&id, &uri, &songIDStr, &matchFoundInt); err != nil {
+			return nil, err
+		}
+
+		songID, err := uuid.Parse(songIDStr)
+		if err != nil {
+			return nil, err
+		}
+
+		matchFound := false
+		if matchFoundInt == 1 {
+			matchFound = true
+		}
+
+		s := domain.NewSpotifyTrackFromDB(id, uri, songID, matchFound)
+		results = append(results, s)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
 func (r *spotifyTrackSqlRepository) Insert(ctx context.Context, track domain.SpotifyTrack) error {
 	_, err := r.tx.ExecContext(
 		ctx,
-		`INSERT INTO spotify_tracks (id, uri, song_id, match_not_found)
+		`INSERT INTO spotify_tracks (id, uri, song_id, match_found)
 			VALUES (?,?,?,?);`,
-		track.TrackID(), track.URI(), track.SongID(), boolToInt(track.MatchNotFound()),
+		track.TrackID(), track.URI(), track.SongID(), boolToInt(track.MatchFound()),
 	)
 	if err != nil {
 		return err

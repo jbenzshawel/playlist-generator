@@ -10,11 +10,11 @@ type SearchTrackResponse struct {
 }
 
 type TrackCollection struct {
-	Total int     `json:"total"`
-	Items []Track `json:"items"`
+	Total int           `json:"total"`
+	Items []SimpleTrack `json:"items"`
 }
 
-type Track struct {
+type SimpleTrack struct {
 	ID          string      `json:"id"`
 	Album       Album       `json:"album"`
 	Artists     []Artist    `json:"artists"`
@@ -24,7 +24,7 @@ type Track struct {
 	Name        string      `json:"name"`
 }
 
-func (t Track) LogValue() slog.Value {
+func (t SimpleTrack) LogValue() slog.Value {
 	var artists []string
 	for _, a := range t.Artists {
 		artists = append(artists, a.Name)
@@ -104,4 +104,16 @@ type AddItemsToPlaylistRequest struct {
 
 type PlaylistSnapshot struct {
 	SnapshotID string `json:"snapshot_id"`
+}
+
+type PlaylistItem struct {
+	AddedAt string      `json:"added_at"`
+	AddedBy User        `json:"added_by"`
+	IsLocal bool        `json:"is_local"`
+	Track   SimpleTrack `json:"track"`
+}
+
+type PlaylistTrackPage struct {
+	Total int            `json:"total"`
+	Items []PlaylistItem `json:"items"`
 }

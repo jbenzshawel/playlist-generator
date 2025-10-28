@@ -1,20 +1,26 @@
 package spotify
 
-import "github.com/jbenzshawel/playlist-generator/internal/domain"
+import (
+	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/internal/providers"
+	"github.com/jbenzshawel/playlist-generator/internal/domain"
+)
 
 type Client interface {
-	trackSearcher
+	providers.TrackSearcher
 	creator
+	playlist
 }
 
 type Commands struct {
-	UpdateTracks   UpdateTracksCommandHandler
+	SearchTracks   SearchTracksCommandHandler
 	CreatePlaylist CreatePlaylistCommandHandler
+	SyncPlaylist   SyncPlaylistCommandHandler
 }
 
 func NewCommands(client Client, repository domain.Repository) Commands {
 	return Commands{
-		UpdateTracks:   NewUpdateTracksCommandHandler(client, repository),
+		SearchTracks:   NewSearchTracksCommand(client, repository),
 		CreatePlaylist: NewCreatePlaylistCommand(client, repository),
+		SyncPlaylist:   NewSyncPlaylistCommand(client, repository),
 	}
 }

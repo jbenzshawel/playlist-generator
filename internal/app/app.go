@@ -78,30 +78,6 @@ func NewApplication(cfg config.Config) (Application, func()) {
 	}, closer
 }
 
-func (a Application) Run(ctx context.Context, date string) {
-	err := storage.InitializeSchema(ctx, a.db)
-	if err != nil {
-		panic(fmt.Errorf("failed to initialize schema: %w", err))
-	}
-
-	_, err = a.Sources.StudioOne.ListSongs.Execute(ctx, studioone.SongListCommand{Date: date})
-	if err != nil {
-		slog.Error("studio one download song list error", slog.Any("error", err))
-	}
-
-	_, err = a.Playlists.Spotify.UpdateTracks.Execute(ctx, spotify.UpdateTracksCommand{})
-	if err != nil {
-		slog.Error("spotify track update error", slog.Any("error", err))
-	}
-
-	_, err = a.Playlists.Spotify.CreatePlaylist.Execute(ctx, spotify.CreatePlaylistCommand{
-		Date: date,
-	})
-	if err != nil {
-		slog.Error("create spotify playlist error", slog.Any("error", err))
-	}
-}
-
 func setupSpotifyClient(cfg config.Config) *spotifyclient.Client {
 	// TODO: conditionally get auth code depending on mode
 	// May have configuration mode that runs in background downloading song lists
@@ -141,4 +117,35 @@ func setupSpotifyClient(cfg config.Config) *spotifyclient.Client {
 		BaseURL: spotifyClientBaseURL,
 		Client:  spotifyOAuthClient,
 	})
+}
+
+func (a Application) Run(ctx context.Context, date string) {
+	err := storage.InitializeSchema(ctx, a.db)
+	if err != nil {
+		panic(fmt.Errorf("failed to initialize schema: %w", err))
+	}
+
+	_, err = a.Sources.StudioOne.ListSongs.Execute(ctx, studioone.SongListCommand{Date: date})
+	if err != nil {
+		slog.Error("studio one download song list error", slog.Any("error", err))
+	}
+
+	_, err = a.Playlists.Spotify.SearchTracks.Execute(ctx, spotify.SearchTracksCommand{})
+	if err != nil {
+		slog.Error("spotify track update error", slog.Any("error", err))
+	}
+
+	createRes, err := a.Playlists.Spotify.CreatePlaylist.Execute(ctx, spotify.CreatePlaylistCommand{
+		Date: date,
+	})
+	if err != nil {
+		slog.Error("create spotify playlist error", slog.Any("error", err))
+	}
+
+	_, err = a.Playlists.Spotify.SyncPlaylist.Execute(ctx, spotify.SyncPlaylistCommand{
+		Playlist: createRes.Playlist,
+	})
+	if err != nil {
+		slog.Error("sync spotify playlist error", slog.Any("error", err))
+	}
 }
