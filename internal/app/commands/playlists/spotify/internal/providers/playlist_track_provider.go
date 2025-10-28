@@ -2,6 +2,7 @@ package providers
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
@@ -30,6 +31,8 @@ func (p *playlistTrackProvider) GetTracks(ctx context.Context, playlistID string
 	if err != nil {
 		return nil, err
 	}
+
+	slog.Info("retrieving tracks for playlist", slog.Int("total", page.Total))
 
 	var tracks []models.SimpleTrack
 

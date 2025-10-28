@@ -4,6 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
+	"os/signal"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -24,7 +26,8 @@ func main() {
 		panic(fmt.Errorf("failed to load config: %w", err))
 	}
 
-	ctx := context.Background()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	defer stop()
 
 	application, closer := app.NewApplication(cfg)
 	defer closer()
