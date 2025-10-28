@@ -1,4 +1,4 @@
-package spotify
+package providers
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
-
 	"github.com/jbenzshawel/playlist-generator/internal/common/compare"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
@@ -20,21 +19,21 @@ var (
 	errMatchBelowThreshold = errors.New("match below threshold")
 )
 
-type trackSearcher interface {
+type TrackSearcher interface {
 	SearchTrack(ctx context.Context, artist, track, album string) (models.SearchTrackResponse, error)
 }
 
-func NewSpotifyTrackProvider(s trackSearcher) *spotifyTrackProvider {
-	return &spotifyTrackProvider{
+func NewSearchTrackProvider(s TrackSearcher) *searchTrackProvider {
+	return &searchTrackProvider{
 		searcher: s,
 	}
 }
 
-type spotifyTrackProvider struct {
-	searcher trackSearcher
+type searchTrackProvider struct {
+	searcher TrackSearcher
 }
 
-func (s *spotifyTrackProvider) GetTrack(ctx context.Context, song domain.Song) (domain.SpotifyTrack, error) {
+func (s *searchTrackProvider) SearchTrack(ctx context.Context, song domain.Song) (domain.SpotifyTrack, error) {
 	resp, err := s.searcher.SearchTrack(ctx, song.Artist(), song.Track(), song.Album())
 	if err != nil {
 		return domain.SpotifyTrack{}, err
@@ -59,7 +58,7 @@ func (s *spotifyTrackProvider) GetTrack(ctx context.Context, song domain.Song) (
 }
 
 type match struct {
-	item               models.Track
+	item               models.SimpleTrack
 	track              domain.SpotifyTrack
 	artistPercentMatch float64
 	trackPercentMatch  float64

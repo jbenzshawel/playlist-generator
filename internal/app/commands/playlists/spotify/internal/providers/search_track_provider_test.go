@@ -1,18 +1,17 @@
-package spotify
+package providers
 
 import (
 	"context"
 	"testing"
 
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
 
-func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
+func TestSearchTrackProvider_SearchTrack(t *testing.T) {
 	const (
 		artist      = "Cake"
 		track       = "Never There"
@@ -43,7 +42,7 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 			searchResults: models.SearchTrackResponse{
 				Tracks: models.TrackCollection{
 					Total: 1,
-					Items: []models.Track{
+					Items: []models.SimpleTrack{
 						{
 							Album: models.Album{
 								AlbumType: models.AlbumAlbumType,
@@ -69,7 +68,7 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 			searchResults: models.SearchTrackResponse{
 				Tracks: models.TrackCollection{
 					Total: 3,
-					Items: []models.Track{
+					Items: []models.SimpleTrack{
 						{
 							Album: models.Album{
 								AlbumType: models.AlbumAlbumType,
@@ -123,7 +122,7 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 			searchResults: models.SearchTrackResponse{
 				Tracks: models.TrackCollection{
 					Total: 2,
-					Items: []models.Track{
+					Items: []models.SimpleTrack{
 						{
 							Album: models.Album{
 								AlbumType: models.AlbumAlbumType,
@@ -164,7 +163,7 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 			searchResults: models.SearchTrackResponse{
 				Tracks: models.TrackCollection{
 					Total: 1,
-					Items: []models.Track{
+					Items: []models.SimpleTrack{
 						{
 							Album: models.Album{
 								AlbumType: models.AlbumAlbumType,
@@ -190,7 +189,7 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 			searchResults: models.SearchTrackResponse{
 				Tracks: models.TrackCollection{
 					Total: 2,
-					Items: []models.Track{
+					Items: []models.SimpleTrack{
 						{
 							Album: models.Album{
 								AlbumType: models.AlbumAlbumType,
@@ -230,7 +229,7 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 			searchResults: models.SearchTrackResponse{
 				Tracks: models.TrackCollection{
 					Total: 2,
-					Items: []models.Track{
+					Items: []models.SimpleTrack{
 						{
 							Album: models.Album{
 								AlbumType: models.AlbumAlbumType,
@@ -271,7 +270,7 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 			searchResults: models.SearchTrackResponse{
 				Tracks: models.TrackCollection{
 					Total: 0,
-					Items: []models.Track{},
+					Items: []models.SimpleTrack{},
 				},
 			},
 			expectedErr: errTrackNotFound,
@@ -289,11 +288,11 @@ func TestSpotifyTrackProvider_GetTrack(t *testing.T) {
 				searcher.EXPECT().SearchTrack(ctx, tc.song.Artist(), tc.song.Track(), tc.song.Album()).Return(tc.searchResults, nil)
 			}
 
-			provider := spotifyTrackProvider{
+			provider := searchTrackProvider{
 				searcher: searcher,
 			}
 
-			actualTrack, err := provider.GetTrack(ctx, tc.song)
+			actualTrack, err := provider.SearchTrack(ctx, tc.song)
 			assert.ErrorIs(t, err, tc.expectedErr)
 			assert.Equal(t, tc.expectedTrack, actualTrack)
 		})
