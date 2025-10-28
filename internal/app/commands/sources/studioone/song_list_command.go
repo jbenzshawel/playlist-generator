@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/studioone/models"
-
 	"github.com/jbenzshawel/playlist-generator/internal/common/decorator"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )

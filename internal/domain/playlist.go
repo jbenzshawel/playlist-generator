@@ -3,9 +3,10 @@ package domain
 import (
 	"context"
 	"fmt"
-	"github.com/jbenzshawel/playlist-generator/internal/common/dateformat"
 	"log/slog"
 	"time"
+
+	"github.com/jbenzshawel/playlist-generator/internal/common/dateformat"
 )
 
 type PlaylistRepository interface {

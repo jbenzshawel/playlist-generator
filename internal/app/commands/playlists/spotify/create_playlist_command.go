@@ -3,11 +3,11 @@ package spotify
 import (
 	"context"
 	"fmt"
-	"github.com/jbenzshawel/playlist-generator/internal/common/dateformat"
 	"log/slog"
 	"time"
 
 	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
+	"github.com/jbenzshawel/playlist-generator/internal/common/dateformat"
 	"github.com/jbenzshawel/playlist-generator/internal/common/decorator"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )

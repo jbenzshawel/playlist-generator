@@ -7,8 +7,9 @@ package providers
 import (
 	"context"
 
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
 	mock "github.com/stretchr/testify/mock"
+
+	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
 )
 
 // NewMockTrackSearcher creates a new instance of MockTrackSearcher. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
