@@ -2,8 +2,9 @@ package providers
 
 import (
 	"context"
-	"golang.org/x/sync/errgroup"
 	"sync"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
 )
@@ -40,7 +41,7 @@ func (p *playlistTrackProvider) GetTracks(ctx context.Context, playlistID string
 
 	var l sync.Mutex
 	g, gCtx := errgroup.WithContext(ctx)
-	g.SetLimit(6)
+	g.SetLimit(6) // Set limit to prevent being rate limited
 
 	pages := page.Total / maxPageSize
 	// start idx at 1 since we've already loaded the first page
