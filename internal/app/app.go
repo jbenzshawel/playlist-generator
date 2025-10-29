@@ -50,6 +50,7 @@ func NewApplication(cfg config.Config) (Application, func()) {
 		}
 	}
 
+	// A callback endpoint is required to complete the OAuth authentication code flow
 	go func() {
 		err := http.ListenAndServe(":3000", nil)
 		if err != nil {
@@ -144,6 +145,7 @@ func (a Application) Run(ctx context.Context, date string) {
 
 	_, err = a.Playlists.Spotify.SyncPlaylist.Execute(ctx, spotify.SyncPlaylistCommand{
 		Playlist: createRes.Playlist,
+		Date:     date,
 	})
 	if err != nil {
 		slog.Error("sync spotify playlist error", slog.Any("error", err))

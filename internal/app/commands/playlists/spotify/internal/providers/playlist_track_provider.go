@@ -44,7 +44,7 @@ func (p *playlistTrackProvider) GetTracks(ctx context.Context, playlistID string
 
 	var l sync.Mutex
 	g, gCtx := errgroup.WithContext(ctx)
-	g.SetLimit(6) // Set limit to prevent being rate limited
+	g.SetLimit(10) // Set limit to prevent being rate limited
 
 	pages := page.Total / maxPageSize
 	// start idx at 1 since we've already loaded the first page

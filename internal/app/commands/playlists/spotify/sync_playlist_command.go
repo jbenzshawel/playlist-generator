@@ -14,6 +14,7 @@ import (
 
 type SyncPlaylistCommand struct {
 	Playlist domain.Playlist
+	Date     string
 }
 
 type SyncPlaylistCommandHandler decorator.CommandHandler[SyncPlaylistCommand]
@@ -50,12 +51,17 @@ type syncPlaylistCommandHandler struct {
 }
 
 func (c *syncPlaylistCommandHandler) Execute(ctx context.Context, cmd SyncPlaylistCommand) (any, error) {
+	startDate := cmd.Playlist.LastDaySynced()
+	if cmd.Date < cmd.Playlist.LastDaySynced() {
+		startDate = cmd.Playlist.StartDate()
+	}
+
 	endDate, err := cmd.Playlist.EndDate()
 	if err != nil {
 		return nil, err
 	}
 
-	tracks, err := c.trackRepository.GetTracksPlayedInRange(ctx, domain.StudioOneSourceType, cmd.Playlist.StartDate(), endDate)
+	tracks, err := c.trackRepository.GetTracksPlayedInRange(ctx, domain.StudioOneSourceType, startDate, endDate)
 	if err != nil {
 		return nil, err
 	}

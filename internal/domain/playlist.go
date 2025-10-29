@@ -84,11 +84,7 @@ func (p Playlist) DateScope() PlaylistDateScope {
 
 // StartDate returns the inclusive playlist start date
 func (p Playlist) StartDate() string {
-	startDate := p.LastDaySynced()
-	if startDate == "" {
-		startDate = fmt.Sprintf("%s-01", p.Date()) // Date is in YYYY-MM format
-	}
-	return startDate
+	return fmt.Sprintf("%s-01", p.Date()) // Date is in YYYY-MM format
 }
 
 // EndDate returns the exclusive playlist end date

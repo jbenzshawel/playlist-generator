@@ -69,7 +69,7 @@ func (c *createPlaylistCommand) Execute(ctx context.Context, cmd CreatePlaylistC
 	}
 
 	spotifyPlaylist, err := c.creator.CreatePlaylist(ctx, u.ID, models.CreatePlaylistRequest{
-		Name: fmt.Sprintf("Studio One %d-%d", date.Year(), date.Month()),
+		Name: fmt.Sprintf("Studio One %s", date.Format(dateformat.YearMonth)),
 	})
 	if err != nil {
 		return CreatePlaylistCommandResult{}, err
