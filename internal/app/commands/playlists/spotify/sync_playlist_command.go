@@ -105,7 +105,7 @@ func (c *syncPlaylistCommandHandler) Execute(ctx context.Context, cmd SyncPlayli
 		return nil, err
 	}
 
-	slog.Info("tacks synced", slog.Int("numTracks", len(trackURIs)))
+	slog.Info("tracks sync complete", slog.Int("numTracks", len(trackURIs)))
 
 	return nil, nil
 }

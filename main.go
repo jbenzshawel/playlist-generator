@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"time"
@@ -17,7 +18,10 @@ import (
 
 func main() {
 	defaultDate := time.Now().Format(dateformat.YearMonthDay)
-	dateFlag := flag.String("date", defaultDate, "the date to download songs for in YYYY-MM-DD")
+	modeFlag := flag.String("mode", string(app.SingleMode), "the mode the generator runs (single or recurring)")
+	dateFlag := flag.String("date", defaultDate, "the date to download songs for in YYYY-MM-DD (single mode)")
+	intervalFlag := flag.Int("interval", 60, "the interval between downloading songs for in minutes (recurring mode)")
+	verboseFlag := flag.Bool("verbose", false, "include detailed info logs")
 
 	flag.Parse()
 
@@ -32,5 +36,15 @@ func main() {
 	application, closer := app.NewApplication(cfg)
 	defer closer()
 
-	application.Run(ctx, *dateFlag)
+	if *verboseFlag {
+		slog.SetLogLoggerLevel(slog.LevelDebug)
+	} else {
+		slog.SetLogLoggerLevel(slog.LevelInfo)
+	}
+
+	application.Run(ctx, app.RunConfig{
+		Mode:     app.Mode(*modeFlag),
+		Date:     *dateFlag,
+		Interval: time.Duration(*intervalFlag) * time.Minute,
+	})
 }

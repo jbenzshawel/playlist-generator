@@ -32,7 +32,7 @@ func (p *playlistTrackProvider) GetTracks(ctx context.Context, playlistID string
 		return nil, err
 	}
 
-	slog.Info("retrieving tracks for playlist", slog.Int("total", page.Total))
+	slog.Debug("retrieving tracks for playlist", slog.Int("total", page.Total))
 
 	var tracks []models.SimpleTrack
 

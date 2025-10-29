@@ -40,7 +40,7 @@ func (t *searchTracksCommandHandler) Execute(ctx context.Context, _ SearchTracks
 		return nil, err
 	}
 
-	slog.Info("found unknown songs to search", slog.Int("numSongs", len(songs)))
+	slog.Debug("found unknown songs to search", slog.Int("numSongs", len(songs)))
 
 	// anything higher than 6 workers starts to get rate limited
 	err = async.ParallelFor(ctx, len(songs), 6, func(ctx context.Context, idx int) error {

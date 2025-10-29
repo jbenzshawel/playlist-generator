@@ -43,7 +43,7 @@ func (s *searchTrackProvider) SearchTrack(ctx context.Context, song domain.Song)
 		return findSongTrackMatch(resp.Tracks, song)
 	}
 
-	slog.Info("track not found with album query param; searching without album", slog.Any("song", song))
+	slog.Debug("track not found with album query param; searching without album", slog.Any("song", song))
 
 	resp, err = s.searcher.SearchTrack(ctx, song.Artist(), song.Track(), "")
 	if err != nil {
@@ -82,11 +82,11 @@ func (m match) weightedAverage() float64 {
 }
 
 func findSongTrackMatch(tracks models.TrackCollection, song domain.Song) (domain.SpotifyTrack, error) {
-	slog.Info("spotify search tracks found", slog.Int("count", tracks.Total))
+	slog.Debug("spotify search tracks found", slog.Int("count", tracks.Total))
 
 	if tracks.Total == 1 {
 		t := tracks.Items[0]
-		slog.Info("match track found", slog.Any("match", t))
+		slog.Debug("match track found", slog.Any("match", t))
 
 		return domain.NewSpotifyTrack(song.ID(), t.ID, t.URI), nil
 	}
@@ -123,7 +123,7 @@ func findSongTrackMatch(tracks models.TrackCollection, song domain.Song) (domain
 		return domain.SpotifyTrack{}, errMatchBelowThreshold
 	}
 
-	slog.Info("partial match track found",
+	slog.Debug("partial match track found",
 		slog.Any("percent", matches[0].weightedAverage()),
 		slog.Any("match", matches[0].item),
 	)
