@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
@@ -31,8 +32,9 @@ func (r *songSourceSqlRepository) SetTransaction(tx *sql.Tx) {
 }
 
 func (r *songSourceSqlRepository) BulkInsert(ctx context.Context, songs []domain.SongSource) error {
+	var insertCount int64
 	for _, s := range songs {
-		_, err := r.tx.ExecContext(
+		res, err := r.tx.ExecContext(
 			ctx,
 			`INSERT INTO song_sources (id, source_id, source_type_id, song_hash, program_name, date_played, end_time, created)
 			VALUES (?,?,?,?,?,?,?, ?);`,
@@ -41,7 +43,14 @@ func (r *songSourceSqlRepository) BulkInsert(ctx context.Context, songs []domain
 		if err != nil {
 			return fmt.Errorf("failed to insert song source: %w", err)
 		}
+		count, err := res.RowsAffected()
+		if err != nil {
+			return fmt.Errorf("failed to get affected rows: %w", err)
+		}
+		insertCount += count
 	}
+
+	slog.Debug("insert song sources complete", slog.Int64("count", insertCount))
 
 	return nil
 }

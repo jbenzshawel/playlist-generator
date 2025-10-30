@@ -31,9 +31,9 @@ func (r *spotifyTrackSqlRepository) SetTransaction(tx *sql.Tx) {
 func (r *spotifyTrackSqlRepository) GetUnknownSongs(ctx context.Context) ([]domain.Song, error) {
 	rows, err := r.tx.QueryContext(
 		ctx,
-		`SELECT song.id, song.artist, song.track, song.album, song.upc, song.song_hash, song.created
-			FROM song 
-			LEFT JOIN spotify_tracks ON song.id = spotify_tracks.song_id
+		`SELECT songs.id, songs.artist, songs.track, songs.album, songs.upc, songs.song_hash, songs.created
+			FROM songs 
+			LEFT JOIN spotify_tracks ON songs.id = spotify_tracks.song_id
 			WHERE spotify_tracks.uri IS NULL;`,
 	)
 	if err != nil {
