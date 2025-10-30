@@ -132,6 +132,7 @@ func setupSpotifyClient(cfg config.Config) *spotifyclient.Client {
 type RunConfig struct {
 	Mode     Mode
 	Date     string
+	Month    string
 	Interval time.Duration
 }
 
@@ -143,7 +144,11 @@ func (a Application) Run(ctx context.Context, cfg RunConfig) {
 
 	switch cfg.Mode {
 	case SingleMode:
-		a.genStudioOneSpotifyPlaylists(ctx, cfg.Date)
+		if cfg.Month != "" {
+			a.genStudioOneSpotifyPlaylistForMonth(ctx, cfg.Month)
+		} else {
+			a.genStudioOneSpotifyPlaylistsForDay(ctx, cfg.Date)
+		}
 	case RecurringMode:
 		a.startRecurringJob(ctx, cfg.Interval)
 	default:
@@ -152,7 +157,7 @@ func (a Application) Run(ctx context.Context, cfg RunConfig) {
 
 }
 
-func (a Application) genStudioOneSpotifyPlaylists(ctx context.Context, date string) {
+func (a Application) genStudioOneSpotifyPlaylistsForDay(ctx context.Context, date string) {
 	slog.Info("adding songs from Studio One to Spotify playlist", slog.String("date", date))
 
 	_, err := a.Sources.StudioOne.ListSongs.Execute(ctx, studioone.SongListCommand{Date: date})
@@ -195,7 +200,7 @@ func (a Application) startRecurringJob(ctx context.Context, interval time.Durati
 				select {
 				case <-ticker.C:
 					date := time.Now().Format(dateformat.YearMonthDay)
-					a.genStudioOneSpotifyPlaylists(ctx, date)
+					a.genStudioOneSpotifyPlaylistsForDay(ctx, date)
 				case <-ctx.Done():
 					slog.Info("stopping recurring job")
 					done <- true
@@ -206,4 +211,18 @@ func (a Application) startRecurringJob(ctx context.Context, interval time.Durati
 	}()
 
 	<-done
+}
+
+func (a Application) genStudioOneSpotifyPlaylistForMonth(ctx context.Context, month string) {
+	date, err := time.Parse(dateformat.YearMonth, month)
+	if err != nil {
+		panic(fmt.Errorf("invalid single mode month - YYYY-MM format expected: %w", err))
+	}
+
+	end := date.AddDate(0, 1, 0)
+	for date.Before(end) {
+		a.genStudioOneSpotifyPlaylistsForDay(ctx, date.Format(dateformat.YearMonthDay))
+
+		date = date.AddDate(0, 0, 1)
+	}
 }
