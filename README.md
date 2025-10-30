@@ -22,7 +22,7 @@ The `recurring` flag can be used to run the tool in the background to add songs 
 example, if the interval is set to `5` minutes the sources playlist for the current month will be updated every five 
 minutes with the most recent song(s) added. 
 
-| Flag name  | Default      | Description                                                                                                                                                           |
+| Flag       | Default      | Description                                                                                                                                                           |
 |------------|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `mode`     | single       | The generator mode (single or recurring). In single mode the generator runs once based on parameters. In recurring mode the generator runs at the configured interval | 
 | `date`     | current date | The date to download songs for in YYYY-MM-DD. This option is only used in single mode.                                                                                |
