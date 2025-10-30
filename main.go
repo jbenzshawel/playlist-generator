@@ -40,7 +40,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer stop()
 
-	application, closer := app.NewApplication(cfg)
+	application, closer := app.NewApplication(ctx, cfg)
 	defer closer()
 
 	application.Run(ctx, app.RunConfig{

@@ -33,9 +33,9 @@ func NewSongListCommand(
 ) SongListCommandHandler {
 	return decorator.ApplyDBTransactionDecorator(
 		&songListCommand{
-			queryer:            provider,
-			songRepository:     repository.Song(),
-			pubRadioRepository: repository.SongSource(),
+			queryer:          provider,
+			songRepository:   repository.Song(),
+			sourceRepository: repository.SongSource(),
 		},
 		repository,
 	)
@@ -46,9 +46,9 @@ type songGetter interface {
 }
 
 type songListCommand struct {
-	queryer            songGetter
-	songRepository     domain.SongRepository
-	pubRadioRepository domain.SongSourceRepository
+	queryer          songGetter
+	songRepository   domain.SongRepository
+	sourceRepository domain.SongSourceRepository
 }
 
 func (d *songListCommand) Execute(ctx context.Context, cmd SongListCommand) (any, error) {
@@ -98,7 +98,7 @@ func (d *songListCommand) Execute(ctx context.Context, cmd SongListCommand) (any
 		return nil, err
 	}
 
-	err = d.pubRadioRepository.BulkInsert(ctx, pubRadioSongs)
+	err = d.sourceRepository.BulkInsert(ctx, pubRadioSongs)
 	if err != nil {
 		return nil, err
 	}
