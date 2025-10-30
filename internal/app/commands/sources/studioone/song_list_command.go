@@ -6,13 +6,17 @@ import (
 	"time"
 
 	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/studioone/models"
+	"github.com/jbenzshawel/playlist-generator/internal/common/dateformat"
 	"github.com/jbenzshawel/playlist-generator/internal/common/decorator"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
 
-const (
-	timeLayout = "01-02-2006 15:04:05"
-)
+var supportedPrograms = map[string]struct{}{
+	"Studio One":            {},
+	"Blue Avenue":           {},
+	"Studio One Tracks":     {},
+	"Studio One All Access": {},
+}
 
 type SongListCommand struct {
 	Date string
@@ -55,7 +59,15 @@ func (d *songListCommand) Execute(ctx context.Context, cmd SongListCommand) (any
 	var pubRadioSongs []domain.SongSource
 
 	for _, item := range collection.Items {
-		// TODO: filter on programs
+		var programName string
+		if item.Program != nil {
+			programName = item.Program.Name
+		}
+		if _, ok := supportedPrograms[programName]; !ok {
+			slog.Debug("unsupported program", slog.String("program", programName))
+			continue
+		}
+
 		for _, s := range item.Playlist {
 			song, err := domain.NewSong(s.Artist, s.Track, s.Album, s.UPC)
 			if err != nil {
@@ -65,14 +77,9 @@ func (d *songListCommand) Execute(ctx context.Context, cmd SongListCommand) (any
 
 			songs = append(songs, song)
 
-			var programName string
-			if item.Program != nil {
-				programName = item.Program.Name
-			}
-
-			parsedTime, err := time.Parse(timeLayout, s.EndTime)
-			if err != nil {
-				slog.Warn("song skipped", slog.Any("error", err))
+			parsedTime, ok := tryParseTime(s.EndTime)
+			if !ok {
+				slog.Warn("song skipped", slog.Any("invalidEndTime", s.EndTime))
 				continue
 			}
 			pubRadio := domain.NewSongSource(s.ID, song.SongHash(), domain.StudioOneSourceType, programName, cmd.Date, parsedTime)
@@ -94,4 +101,14 @@ func (d *songListCommand) Execute(ctx context.Context, cmd SongListCommand) (any
 	}
 
 	return nil, nil
+}
+
+func tryParseTime(t string) (time.Time, bool) {
+	parsedTime, err := time.Parse(dateformat.YearMonthDayTime, t)
+	ok := err != nil
+	if !ok {
+		parsedTime, err = time.Parse(dateformat.MonthDayYearTime, t)
+		ok = err != nil
+	}
+	return parsedTime, ok
 }

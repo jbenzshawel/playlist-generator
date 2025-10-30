@@ -34,18 +34,8 @@ type searchTrackProvider struct {
 }
 
 func (s *searchTrackProvider) SearchTrack(ctx context.Context, song domain.Song) (domain.SpotifyTrack, error) {
-	resp, err := s.searcher.SearchTrack(ctx, song.Artist(), song.Track(), song.Album())
-	if err != nil {
-		return domain.SpotifyTrack{}, err
-	}
-
-	if resp.Tracks.Total > 0 {
-		return findSongTrackMatch(resp.Tracks, song)
-	}
-
-	slog.Debug("track not found with album query param; searching without album", slog.Any("song", song))
-
-	resp, err = s.searcher.SearchTrack(ctx, song.Artist(), song.Track(), "")
+	// The album is sometimes incorrect in studio one data, let's leave it off for now
+	resp, err := s.searcher.SearchTrack(ctx, song.Artist(), song.Track(), "")
 	if err != nil {
 		return domain.SpotifyTrack{}, err
 	}
