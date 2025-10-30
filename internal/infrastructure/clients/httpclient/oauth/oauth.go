@@ -49,9 +49,9 @@ type authenticator struct {
 	state    string
 }
 
-func (a *authenticator) GetAuthCodeCallbackHandler(chOAuthClient chan *http.Client) http.HandlerFunc {
+func (a *authenticator) GetAuthCodeCallbackHandler(ctx context.Context, chOAuthClient chan *http.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tok, err := a.token(r.Context(), a.state, r)
+		tok, err := a.token(ctx, a.state, r)
 		if err != nil {
 			http.Error(w, "Couldn't get token", http.StatusForbidden)
 			return
@@ -61,7 +61,7 @@ func (a *authenticator) GetAuthCodeCallbackHandler(chOAuthClient chan *http.Clie
 			return
 		}
 
-		client := a.oauthCfg.Client(r.Context(), tok)
+		client := a.oauthCfg.Client(ctx, tok)
 		chOAuthClient <- client
 	}
 }

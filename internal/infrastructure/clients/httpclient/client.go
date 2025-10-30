@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math"
@@ -37,6 +38,8 @@ type retryingClient struct {
 	maxRetries  int
 	minWaitTime time.Duration
 	maxWaitTime time.Duration
+
+	open bool
 }
 
 type Config struct {
@@ -52,6 +55,7 @@ func NewRetryingClient(cfg Config) *retryingClient {
 		maxRetries:  defaultMaxRetries,
 		minWaitTime: defaultMinWaitTime,
 		maxWaitTime: defaultMaxWaitTime,
+		open:        true,
 	}
 
 	if cfg.Client != nil {
@@ -141,18 +145,21 @@ func (c *retryingClient) Post(ctx context.Context, endpoint string, options ...R
 
 func (c *retryingClient) Do(req *http.Request) (*http.Response, error) {
 	for attempt := 0; attempt < c.maxRetries; attempt++ {
-		clone := req.Clone(req.Context())
+		if !c.open {
+			return nil, errors.New("circuit closed")
+		}
 
-		resp, err := c.client.Do(clone)
+		clone := req.Clone(req.Context())
 
 		wait := c.defaultWaitStrategy(attempt)
 
+		resp, err := c.client.Do(clone)
 		if err != nil {
 			slog.Warn("http request failed with network error",
 				slog.Any("error", err),
 				slog.Int("attempt", attempt),
 			)
-			time.Sleep(wait)
+			c.sleep(req.Context(), wait, false)
 			continue
 		}
 
@@ -167,16 +174,18 @@ func (c *retryingClient) Do(req *http.Request) (*http.Response, error) {
 			wait = getRetryAfter(resp, wait)
 			slog.Warn("http request failed with too many requests",
 				slog.Int("attempt", attempt),
+				slog.Int("wait", int(wait)),
 			)
-			time.Sleep(wait)
+			c.sleep(req.Context(), wait, true)
 			continue
 		}
 
 		if resp.StatusCode >= http.StatusInternalServerError && resp.StatusCode != http.StatusNotImplemented {
 			slog.Warn("http request failed with internal server error",
 				slog.Int("attempt", attempt),
+				slog.Int("wait", int(wait)),
 			)
-			time.Sleep(wait)
+			c.sleep(req.Context(), wait, false)
 			continue
 		}
 
@@ -196,6 +205,31 @@ func (c *retryingClient) defaultWaitStrategy(attempt int) time.Duration {
 	interval := int64(center)
 	jitter := c.rnd.Int63n(interval)
 	return time.Duration(math.Abs(float64(interval + jitter)))
+}
+
+func (c *retryingClient) sleep(ctx context.Context, d time.Duration, closeCircuit bool) {
+	if closeCircuit {
+		c.closeCircuit()
+	}
+	select {
+	case <-ctx.Done():
+	case <-time.After(d):
+		c.openCircuit()
+	}
+}
+
+func (c *retryingClient) closeCircuit() {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	c.open = false
+	slog.Debug("client circuit closed")
+}
+
+func (c *retryingClient) openCircuit() {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	c.open = true
+	slog.Debug("client circuit open")
 }
 
 func getRetryAfter(resp *http.Response, defaultWait time.Duration) time.Duration {

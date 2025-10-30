@@ -31,8 +31,6 @@ const (
 )
 
 type Application struct {
-	db *sql.DB
-
 	commands
 }
 
@@ -41,7 +39,7 @@ type commands struct {
 	Playlists playlists.Commands
 }
 
-func NewApplication(cfg config.Config) (Application, func()) {
+func NewApplication(ctx context.Context, cfg config.Config) (Application, func()) {
 	cfg, err := config.Load()
 	if err != nil {
 		panic(fmt.Errorf("failed to load config: %w", err))
@@ -59,6 +57,11 @@ func NewApplication(cfg config.Config) (Application, func()) {
 		}
 	}
 
+	err = storage.InitializeSchema(ctx, db)
+	if err != nil {
+		panic(fmt.Errorf("failed to initialize schema: %w", err))
+	}
+
 	// A callback endpoint is required to complete the OAuth authentication code flow
 	go func() {
 		err := http.ListenAndServe(":3000", nil)
@@ -67,7 +70,7 @@ func NewApplication(cfg config.Config) (Application, func()) {
 		}
 	}()
 
-	spotifyClient := setupSpotifyClient(cfg)
+	spotifyClient := setupSpotifyClient(ctx, cfg.SpotifyClient)
 	repository := storage.NewRepository(db)
 
 	iprBaseURL, err := url.Parse(cfg.IowaPublicRadio.BaseURL)
@@ -80,7 +83,6 @@ func NewApplication(cfg config.Config) (Application, func()) {
 	})
 
 	return Application{
-		db: db,
 		commands: commands{
 			Sources:   sources.NewCommands(iprClient, repository),
 			Playlists: playlists.NewCommands(spotifyClient, repository),
@@ -88,15 +90,15 @@ func NewApplication(cfg config.Config) (Application, func()) {
 	}, closer
 }
 
-func setupSpotifyClient(cfg config.Config) *spotifyclient.Client {
+func setupSpotifyClient(ctx context.Context, clientConfig config.OAuthClient) *spotifyclient.Client {
 	// TODO: conditionally get auth code depending on Mode
 	// May have configuration Mode that runs in background downloading song lists
 	// and populating them with spotify metadata
 	auth := oauth.NewAuthenticator(oauth.AuthenticatorConfig{
-		ClientID:     cfg.Clients.SpotifyClient.ClientID,
-		ClientSecret: cfg.Clients.SpotifyClient.ClientSecret,
-		AuthURL:      cfg.Clients.SpotifyClient.AuthURL,
-		TokenURL:     cfg.Clients.SpotifyClient.TokenURL,
+		ClientID:     clientConfig.ClientID,
+		ClientSecret: clientConfig.ClientSecret,
+		AuthURL:      clientConfig.AuthURL,
+		TokenURL:     clientConfig.TokenURL,
 		RedirectURL:  "http://127.0.0.1:3000/callback",
 		Scopes: []string{
 			"playlist-read-private",
@@ -110,7 +112,7 @@ func setupSpotifyClient(cfg config.Config) *spotifyclient.Client {
 	}
 
 	chOAuthClient := make(chan *http.Client)
-	completeAuthHandler := auth.GetAuthCodeCallbackHandler(chOAuthClient)
+	completeAuthHandler := auth.GetAuthCodeCallbackHandler(ctx, chOAuthClient)
 
 	http.HandleFunc("/callback", completeAuthHandler)
 
@@ -118,7 +120,7 @@ func setupSpotifyClient(cfg config.Config) *spotifyclient.Client {
 
 	spotifyOAuthClient := <-chOAuthClient
 
-	spotifyClientBaseURL, err := url.Parse(cfg.SpotifyClient.BaseURL)
+	spotifyClientBaseURL, err := url.Parse(clientConfig.BaseURL)
 	if err != nil {
 		panic(fmt.Errorf("failed to parse SpotifyClient.BaseURL: %w", err))
 	}
@@ -137,11 +139,6 @@ type RunConfig struct {
 }
 
 func (a Application) Run(ctx context.Context, cfg RunConfig) {
-	err := storage.InitializeSchema(ctx, a.db)
-	if err != nil {
-		panic(fmt.Errorf("failed to initialize schema: %w", err))
-	}
-
 	switch cfg.Mode {
 	case SingleMode:
 		if cfg.Month != "" {
@@ -190,9 +187,13 @@ func (a Application) genStudioOneSpotifyPlaylistForMonth(ctx context.Context, mo
 
 	end := date.AddDate(0, 1, 0)
 	for date.Before(end) {
-		a.genStudioOneSpotifyPlaylistsForDay(ctx, date.Format(dateformat.YearMonthDay))
+		select {
+		case <-ctx.Done():
+		default:
+			a.genStudioOneSpotifyPlaylistsForDay(ctx, date.Format(dateformat.YearMonthDay))
 
-		date = date.AddDate(0, 0, 1)
+			date = date.AddDate(0, 0, 1)
+		}
 	}
 }
 
