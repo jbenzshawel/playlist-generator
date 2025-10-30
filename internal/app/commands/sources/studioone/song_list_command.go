@@ -3,6 +3,7 @@ package studioone
 import (
 	"context"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/studioone/models"
@@ -12,10 +13,12 @@ import (
 )
 
 var supportedPrograms = map[string]struct{}{
-	"Studio One":            {},
 	"Blue Avenue":           {},
+	"Studio One":            {},
 	"Studio One Tracks":     {},
 	"Studio One All Access": {},
+	"Tiny Desk Radio":       {},
+	"World Cafe":            {},
 }
 
 type SongListCommand struct {
@@ -69,7 +72,7 @@ func (d *songListCommand) Execute(ctx context.Context, cmd SongListCommand) (any
 		}
 
 		for _, s := range item.Playlist {
-			song, err := domain.NewSong(s.Artist, s.Track, s.Album, s.UPC)
+			song, err := domain.NewSong(strings.TrimSpace(s.Artist), strings.TrimSpace(s.Track), strings.TrimSpace(s.Album), s.UPC)
 			if err != nil {
 				slog.Warn("song skipped", slog.Any("error", err))
 				continue
