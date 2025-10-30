@@ -26,6 +26,12 @@ func main() {
 
 	flag.Parse()
 
+	if *verboseFlag {
+		slog.SetLogLoggerLevel(slog.LevelDebug)
+	} else {
+		slog.SetLogLoggerLevel(slog.LevelInfo)
+	}
+
 	cfg, err := config.Load()
 	if err != nil {
 		panic(fmt.Errorf("failed to load config: %w", err))
@@ -36,12 +42,6 @@ func main() {
 
 	application, closer := app.NewApplication(cfg)
 	defer closer()
-
-	if *verboseFlag {
-		slog.SetLogLoggerLevel(slog.LevelDebug)
-	} else {
-		slog.SetLogLoggerLevel(slog.LevelInfo)
-	}
 
 	application.Run(ctx, app.RunConfig{
 		Mode:     app.Mode(*modeFlag),

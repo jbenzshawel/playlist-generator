@@ -1,7 +1,7 @@
 # Playlist Generator
-This is a simple tool that pulls a list of songs from a configured source
-and syncs them to a playlist in spotify. I found that my Spotify Discover Weekly
-playlist was no longer interesting and occasionally included AI music. 
+This is a simple tool that pulls a list of songs from a configured source and syncs them to a playlist 
+in Spotify. I found that my Spotify Discover Weekly playlist was no longer interesting and occasionally 
+included AI music. 
 
 ## Overview
 The tool currently scopes all playlists to songs played over a month at a given source. For example, if
@@ -20,7 +20,7 @@ alls songs played from a source in the given month.
 
 The `recurring` flag can be used to run the tool in the background to add songs played from a source in real time. For 
 example, if the interval is set to `5` minutes the sources playlist for the current month will be updated every five 
-minutes with the most recent song(s) added. 
+minutes with the most recent song(s) played. 
 
 | Flag       | Default      | Description                                                                                                                                                           |
 |------------|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|

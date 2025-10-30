@@ -157,6 +157,45 @@ func (a Application) Run(ctx context.Context, cfg RunConfig) {
 
 }
 
+func (a Application) startRecurringJob(ctx context.Context, interval time.Duration) {
+	slog.Info("starting recurring job", slog.String("interval", fmt.Sprintf("%v minutes", interval.Minutes())))
+
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	done := make(chan bool)
+
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				date := time.Now().Format(dateformat.YearMonthDay)
+				a.genStudioOneSpotifyPlaylistsForDay(ctx, date)
+			case <-ctx.Done():
+				slog.Info("stopping recurring job")
+				done <- true
+				return
+			}
+		}
+	}()
+
+	<-done
+}
+
+func (a Application) genStudioOneSpotifyPlaylistForMonth(ctx context.Context, month string) {
+	date, err := time.Parse(dateformat.YearMonth, month)
+	if err != nil {
+		panic(fmt.Errorf("invalid single mode month - YYYY-MM format expected: %w", err))
+	}
+
+	end := date.AddDate(0, 1, 0)
+	for date.Before(end) {
+		a.genStudioOneSpotifyPlaylistsForDay(ctx, date.Format(dateformat.YearMonthDay))
+
+		date = date.AddDate(0, 0, 1)
+	}
+}
+
 func (a Application) genStudioOneSpotifyPlaylistsForDay(ctx context.Context, date string) {
 	slog.Info("adding songs from Studio One to Spotify playlist", slog.String("date", date))
 
@@ -183,46 +222,5 @@ func (a Application) genStudioOneSpotifyPlaylistsForDay(ctx context.Context, dat
 	})
 	if err != nil {
 		slog.Error("sync spotify playlist error", slog.Any("error", err))
-	}
-}
-
-func (a Application) startRecurringJob(ctx context.Context, interval time.Duration) {
-	slog.Info("starting recurring job", slog.String("interval", fmt.Sprintf("%v minutes", interval.Minutes())))
-
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-
-	done := make(chan bool)
-
-	go func() {
-		for {
-			for {
-				select {
-				case <-ticker.C:
-					date := time.Now().Format(dateformat.YearMonthDay)
-					a.genStudioOneSpotifyPlaylistsForDay(ctx, date)
-				case <-ctx.Done():
-					slog.Info("stopping recurring job")
-					done <- true
-					return
-				}
-			}
-		}
-	}()
-
-	<-done
-}
-
-func (a Application) genStudioOneSpotifyPlaylistForMonth(ctx context.Context, month string) {
-	date, err := time.Parse(dateformat.YearMonth, month)
-	if err != nil {
-		panic(fmt.Errorf("invalid single mode month - YYYY-MM format expected: %w", err))
-	}
-
-	end := date.AddDate(0, 1, 0)
-	for date.Before(end) {
-		a.genStudioOneSpotifyPlaylistsForDay(ctx, date.Format(dateformat.YearMonthDay))
-
-		date = date.AddDate(0, 0, 1)
 	}
 }
