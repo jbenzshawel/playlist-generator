@@ -24,8 +24,11 @@ type Client struct {
 func New(cfg Config) *Client {
 	return &Client{
 		Client: httpclient.NewRetryingClient(httpclient.Config{
-			BaseURL: cfg.BaseURL,
-			Client:  cfg.Client,
+			BaseURL:          cfg.BaseURL,
+			Client:           cfg.Client,
+			LimitWindow:      30,
+			LimitNumRequests: 180,
+			LimitBatchSize:   6,
 		}),
 	}
 }

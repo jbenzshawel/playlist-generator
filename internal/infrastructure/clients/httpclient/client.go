@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log/slog"
 	"math"
@@ -14,6 +13,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient/internal/ratelimit"
 )
 
 const (
@@ -39,12 +40,20 @@ type retryingClient struct {
 	minWaitTime time.Duration
 	maxWaitTime time.Duration
 
-	open bool
+	rateLimit *ratelimit.RateLimit
 }
 
 type Config struct {
 	BaseURL *url.URL
 	Client  *http.Client
+
+	// LimitWindow optional window, in seconds, for client side limiter
+	LimitWindow int
+	// LimitNumRequests optional max num requests in a window
+	LimitNumRequests int
+	// LimitBatchSize should be set if client requests will be batched. Configuring
+	// this value takes into account batch size when calculating client size limits.
+	LimitBatchSize int
 }
 
 // NewRetryingClient creates a retryingClient with default settings.
@@ -55,13 +64,18 @@ func NewRetryingClient(cfg Config) *retryingClient {
 		maxRetries:  defaultMaxRetries,
 		minWaitTime: defaultMinWaitTime,
 		maxWaitTime: defaultMaxWaitTime,
-		open:        true,
 	}
 
 	if cfg.Client != nil {
 		c.client = cfg.Client
 	} else {
 		c.client = &http.Client{Timeout: 10 * time.Second}
+	}
+
+	if cfg.LimitNumRequests > 0 {
+		c.rateLimit = ratelimit.New(ratelimit.WithClientLimits(cfg.LimitWindow, cfg.LimitNumRequests, cfg.LimitBatchSize))
+	} else {
+		c.rateLimit = ratelimit.New()
 	}
 
 	return c
@@ -145,13 +159,17 @@ func (c *retryingClient) Post(ctx context.Context, endpoint string, options ...R
 
 func (c *retryingClient) Do(req *http.Request) (*http.Response, error) {
 	for attempt := 0; attempt < c.maxRetries; attempt++ {
-		if !c.open {
-			return nil, errors.New("circuit closed")
+		if c.rateLimit.Limited() {
+			// if the circuit is open due to being rate limited
+			// wait until the time after elapsed before continuing
+			c.rateLimit.WaitTimeAfter(req.Context())
 		}
 
 		clone := req.Clone(req.Context())
 
 		wait := c.defaultWaitStrategy(attempt)
+
+		c.rateLimit.Increment(req.Context())
 
 		resp, err := c.client.Do(clone)
 		if err != nil {
@@ -207,29 +225,15 @@ func (c *retryingClient) defaultWaitStrategy(attempt int) time.Duration {
 	return time.Duration(math.Abs(float64(interval + jitter)))
 }
 
-func (c *retryingClient) sleep(ctx context.Context, d time.Duration, closeCircuit bool) {
-	if closeCircuit {
-		c.closeCircuit()
+func (c *retryingClient) sleep(ctx context.Context, d time.Duration, isRateLimited bool) {
+	if isRateLimited {
+		c.rateLimit.SetTimeAfter(ctx, d)
 	}
+
 	select {
 	case <-ctx.Done():
 	case <-time.After(d):
-		c.openCircuit()
 	}
-}
-
-func (c *retryingClient) closeCircuit() {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	c.open = false
-	slog.Debug("client circuit closed")
-}
-
-func (c *retryingClient) openCircuit() {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	c.open = true
-	slog.Debug("client circuit open")
 }
 
 func getRetryAfter(resp *http.Response, defaultWait time.Duration) time.Duration {
