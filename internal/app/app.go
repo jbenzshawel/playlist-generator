@@ -118,17 +118,21 @@ func setupSpotifyClient(ctx context.Context, clientConfig config.OAuthClient) *s
 
 	fmt.Printf("Click the following URL to complete spotify login: %s\n", loginURL)
 
-	spotifyOAuthClient := <-chOAuthClient
+	select {
+	case <-ctx.Done():
+	case spotifyOAuthClient := <-chOAuthClient:
+		spotifyClientBaseURL, err := url.Parse(clientConfig.BaseURL)
+		if err != nil {
+			panic(fmt.Errorf("failed to parse SpotifyClient.BaseURL: %w", err))
+		}
 
-	spotifyClientBaseURL, err := url.Parse(clientConfig.BaseURL)
-	if err != nil {
-		panic(fmt.Errorf("failed to parse SpotifyClient.BaseURL: %w", err))
+		return spotifyclient.New(spotifyclient.Config{
+			BaseURL: spotifyClientBaseURL,
+			Client:  spotifyOAuthClient,
+		})
 	}
 
-	return spotifyclient.New(spotifyclient.Config{
-		BaseURL: spotifyClientBaseURL,
-		Client:  spotifyOAuthClient,
-	})
+	return nil
 }
 
 type RunConfig struct {
@@ -175,8 +179,6 @@ func (a Application) startRecurringJob(ctx context.Context, interval time.Durati
 			}
 		}
 	}()
-
-	<-done
 }
 
 func (a Application) genStudioOneSpotifyPlaylistForMonth(ctx context.Context, month string) {

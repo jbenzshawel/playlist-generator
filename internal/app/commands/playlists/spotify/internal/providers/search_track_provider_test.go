@@ -29,12 +29,11 @@ func TestSearchTrackProvider_SearchTrack(t *testing.T) {
 	require.NoError(t, err)
 
 	testCases := []struct {
-		name               string
-		song               domain.Song
-		searchResults      models.SearchTrackResponse
-		searchWithoutAlbum bool
-		expectedTrack      domain.SpotifyTrack
-		expectedErr        error
+		name          string
+		song          domain.Song
+		searchResults models.SearchTrackResponse
+		expectedTrack domain.SpotifyTrack
+		expectedErr   error
 	}{
 		{
 			name: "single result",
@@ -157,33 +156,6 @@ func TestSearchTrackProvider_SearchTrack(t *testing.T) {
 			expectedTrack: domain.NewSpotifyTrack(songSingle.ID(), trackID, uri),
 		},
 		{
-			name:               "search without album ",
-			song:               song,
-			searchWithoutAlbum: true,
-			searchResults: models.SearchTrackResponse{
-				Tracks: models.TrackCollection{
-					Total: 1,
-					Items: []models.SimpleTrack{
-						{
-							Album: models.Album{
-								AlbumType: models.AlbumAlbumType,
-								Name:      album,
-							},
-							Artists: []models.Artist{
-								{
-									Name: artist,
-								},
-							},
-							Name: track,
-							ID:   trackID,
-							URI:  uri,
-						},
-					},
-				},
-			},
-			expectedTrack: domain.NewSpotifyTrack(song.ID(), trackID, uri),
-		},
-		{
 			name: "match at min threshold ",
 			song: song,
 			searchResults: models.SearchTrackResponse{
@@ -263,30 +235,13 @@ func TestSearchTrackProvider_SearchTrack(t *testing.T) {
 			},
 			expectedErr: errMatchBelowThreshold,
 		},
-		{
-			name:               "no results",
-			song:               song,
-			searchWithoutAlbum: true,
-			searchResults: models.SearchTrackResponse{
-				Tracks: models.TrackCollection{
-					Total: 0,
-					Items: []models.SimpleTrack{},
-				},
-			},
-			expectedErr: errTrackNotFound,
-		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 
 			searcher := NewMockTrackSearcher(t)
-			if tc.searchWithoutAlbum {
-				searcher.EXPECT().SearchTrack(ctx, tc.song.Artist(), tc.song.Track(), tc.song.Album()).Return(models.SearchTrackResponse{}, nil)
-				searcher.EXPECT().SearchTrack(ctx, tc.song.Artist(), tc.song.Track(), "").Return(tc.searchResults, nil)
-			} else {
-				searcher.EXPECT().SearchTrack(ctx, tc.song.Artist(), tc.song.Track(), tc.song.Album()).Return(tc.searchResults, nil)
-			}
+			searcher.EXPECT().SearchTrack(ctx, tc.song.Artist(), tc.song.Track(), "").Return(tc.searchResults, nil)
 
 			provider := searchTrackProvider{
 				searcher: searcher,
