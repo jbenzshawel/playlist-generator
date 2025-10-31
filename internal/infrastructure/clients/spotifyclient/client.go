@@ -31,13 +31,13 @@ func New(cfg Config) *Client {
 }
 
 func (c *Client) SearchTrack(ctx context.Context, artist, track, album string) (models.SearchTrackResponse, error) {
-	query := fmt.Sprintf("%s%%20artist:%s", url.QueryEscape(track), url.QueryEscape(artist))
+	query := fmt.Sprintf("track:%s artist:%s", track, artist)
 	if album != "" {
-		query += fmt.Sprintf("%%20album:%s", url.QueryEscape(album))
+		query += fmt.Sprintf(" album:%s", album)
 	}
 
 	resp, err := c.Get(ctx, "/search", httpclient.WithQuery(map[string]string{
-		"q":    query,
+		"q":    url.QueryEscape(query),
 		"type": "track",
 	}))
 	if err != nil {
