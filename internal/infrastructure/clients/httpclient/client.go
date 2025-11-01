@@ -219,7 +219,7 @@ func (c *retryingClient) defaultWaitStrategy(attempt int) time.Duration {
 
 func (c *retryingClient) sleep(ctx context.Context, d time.Duration, isRateLimited bool) {
 	if isRateLimited {
-		c.rateLimit.SetTimeAfter(ctx, d)
+		c.rateLimit.SetLimited(ctx, d)
 	}
 
 	select {

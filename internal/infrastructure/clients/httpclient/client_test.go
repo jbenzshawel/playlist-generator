@@ -18,16 +18,20 @@ import (
 )
 
 func TestRetryingClient_Do_RateLimited(t *testing.T) {
+	t.Parallel()
+
 	const (
 		reqLimit      = 7
 		retryAfterDur = 2
 	)
+
 	reqCount := atomic.Int32{}
+	rateLimitCount := atomic.Int32{}
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if reqCount.Load() == reqLimit {
-			w.Header().Set("Retry-After", strconv.Itoa(retryAfterDur))
-			w.WriteHeader(http.StatusTooManyRequests)
+			rateLimitCount.Add(1)
+
 			sync.OnceFunc(func() {
 				select {
 				case <-t.Context().Done():
@@ -35,6 +39,9 @@ func TestRetryingClient_Do_RateLimited(t *testing.T) {
 					reqCount.Swap(0)
 				}
 			})()
+
+			w.Header().Set("Retry-After", strconv.Itoa(retryAfterDur))
+			w.WriteHeader(http.StatusTooManyRequests)
 			return
 		}
 
@@ -68,20 +75,26 @@ func TestRetryingClient_Do_RateLimited(t *testing.T) {
 	for _, statusCode := range statusCodes {
 		require.Equal(t, http.StatusOK, statusCode)
 	}
+
+	assert.Greater(t, rateLimitCount.Load(), int32(reqLimit))
 }
 
 func TestRetryingClient_Do_ClientLimiter_RateLimited(t *testing.T) {
+	t.Parallel()
+
 	const (
 		reqLimit      = 7
 		retryAfterDur = 2
 		batchSize     = 4
 	)
+
 	reqCount := atomic.Int32{}
+	rateLimitCount := atomic.Int32{}
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if reqCount.Load() == reqLimit {
-			w.Header().Set("Retry-After", strconv.Itoa(retryAfterDur))
-			w.WriteHeader(http.StatusTooManyRequests)
+			rateLimitCount.Add(1)
+
 			sync.OnceFunc(func() {
 				select {
 				case <-t.Context().Done():
@@ -89,6 +102,9 @@ func TestRetryingClient_Do_ClientLimiter_RateLimited(t *testing.T) {
 					reqCount.Swap(0)
 				}
 			})()
+
+			w.Header().Set("Retry-After", strconv.Itoa(retryAfterDur))
+			w.WriteHeader(http.StatusTooManyRequests)
 			return
 		}
 
@@ -126,9 +142,13 @@ func TestRetryingClient_Do_ClientLimiter_RateLimited(t *testing.T) {
 	for _, statusCode := range statusCodes {
 		require.Equal(t, http.StatusOK, statusCode)
 	}
+
+	assert.LessOrEqual(t, rateLimitCount.Load(), int32(batchSize))
 }
 
 func TestRetryingClient_Do_ClientLimiter(t *testing.T) {
+	t.Parallel()
+
 	const (
 		windowSize  = 2
 		maxRequests = 5

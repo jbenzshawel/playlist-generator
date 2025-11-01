@@ -8,6 +8,8 @@ import (
 )
 
 func TestSlidingWindowCounter(t *testing.T) {
+	t.Parallel()
+
 	const (
 		window = 2
 	)
@@ -37,6 +39,8 @@ func TestSlidingWindowCounter(t *testing.T) {
 }
 
 func TestSlidingWindowCounter_ZeroWindowSize(t *testing.T) {
+	t.Parallel()
+
 	counter := NewSlidingWindowCounter(0)
 
 	for i := 0; i < 10; i++ {
