@@ -8,7 +8,7 @@ package ratelimit
 import (
 	"context"
 	"log/slog"
-	"math/rand"
+	"math/rand/v2"
 
 	"sync"
 	"time"
@@ -20,8 +20,6 @@ const (
 
 type RateLimit struct {
 	lock sync.RWMutex
-
-	rnd *rand.Rand
 
 	limited           bool
 	timeAfterDuration time.Duration
@@ -60,7 +58,6 @@ func New(opts ...RetryLimitOption) *RateLimit {
 	}
 
 	rl := &RateLimit{
-		rnd:         rand.New(rand.NewSource(time.Now().UnixNano())),
 		window:      NewSlidingWindowCounter(cfg.window),
 		maxRequests: cfg.maxReq,
 		batchSize:   cfg.batchSize,
@@ -112,12 +109,9 @@ func (r *RateLimit) SetTimeAfter(ctx context.Context, d time.Duration) {
 }
 
 func (r *RateLimit) getTimeAfterDuration() time.Duration {
-	r.lock.Lock()
-	defer r.lock.Unlock()
-
 	// include a jitter to prevent subsequent requests from
 	// running at the same time and getting rate limited again
-	jitter := r.rnd.Int63n(250)
+	jitter := int64(rand.IntN(250))
 	return time.Duration(int64(r.timeAfterDuration) + jitter)
 }
 

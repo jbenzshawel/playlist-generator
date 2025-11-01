@@ -7,11 +7,10 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
-	"math/rand"
+	"math/rand/v2"
 	"net/http"
 	"net/url"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient/internal/ratelimit"
@@ -32,9 +31,6 @@ type Client interface {
 type retryingClient struct {
 	client  *http.Client
 	baseURL *url.URL
-
-	lock sync.Mutex
-	rnd  *rand.Rand
 
 	maxRetries  int
 	minWaitTime time.Duration
@@ -59,7 +55,6 @@ type Config struct {
 // NewRetryingClient creates a retryingClient with default settings.
 func NewRetryingClient(cfg Config) *retryingClient {
 	c := &retryingClient{
-		rnd:         rand.New(rand.NewSource(time.Now().UnixNano())),
 		baseURL:     cfg.BaseURL,
 		maxRetries:  defaultMaxRetries,
 		minWaitTime: defaultMinWaitTime,
@@ -214,14 +209,11 @@ func (c *retryingClient) Do(req *http.Request) (*http.Response, error) {
 }
 
 func (c *retryingClient) defaultWaitStrategy(attempt int) time.Duration {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
 	wait := math.Min(float64(c.maxWaitTime), float64(c.minWaitTime)*math.Exp2(float64(attempt)))
 	center := time.Duration(wait / 2)
 
-	interval := int64(center)
-	jitter := c.rnd.Int63n(interval)
+	interval := int(center)
+	jitter := rand.IntN(interval)
 	return time.Duration(math.Abs(float64(interval + jitter)))
 }
 
