@@ -50,7 +50,9 @@ func WithClientLimits(window, maxReq, batchSize int) RetryLimitOption {
 	}
 }
 
-// New returns a RateLimit instance
+// New returns a RateLimit. When no options configured instance will only
+// keep track of limits configured with SetTimeAfter. To also configure
+// client side limiter include WithClientLimits
 func New(opts ...RetryLimitOption) *RateLimit {
 	cfg := &config{}
 	for _, opt := range opts {
