@@ -28,7 +28,7 @@ type RateLimit struct {
 
 	maxRequests int64
 	batchSize   int64
-	window      windowCounter
+	window      SlidingWindowCounter
 }
 
 type config struct {
@@ -58,14 +58,10 @@ func New(opts ...RetryLimitOption) *RateLimit {
 	}
 
 	rl := &RateLimit{
-		rnd: rand.New(rand.NewSource(time.Now().UnixNano())),
-	}
-
-	if cfg.maxReq > 0 {
-		rl.maxRequests = cfg.maxReq
-		rl.window = NewSlidingWindowCounter(cfg.window)
-	} else {
-		rl.window = &noLimitWindowCounter{}
+		rnd:         rand.New(rand.NewSource(time.Now().UnixNano())),
+		window:      NewSlidingWindowCounter(cfg.window),
+		maxRequests: cfg.maxReq,
+		batchSize:   cfg.batchSize,
 	}
 
 	return rl
