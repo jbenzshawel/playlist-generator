@@ -187,7 +187,8 @@ func (c *retryingClient) Do(req *http.Request) (*http.Response, error) {
 			wait = getRetryAfter(resp, wait)
 			slog.Warn("http request failed with too many requests",
 				slog.Int("attempt", attempt),
-				slog.Int("wait", int(wait)),
+				slog.Int("wait", int(wait.Seconds())),
+				slog.Int64("requestCount", c.rateLimit.Count()),
 			)
 			c.sleep(req.Context(), wait, true)
 			continue

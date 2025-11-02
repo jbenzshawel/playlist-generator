@@ -14,10 +14,13 @@ import (
 
 var supportedPrograms = map[string]struct{}{
 	"Blue Avenue":           {},
+	"Blues Before Sunrise":  {},
+	"Jazz Department":       {},
 	"Studio One":            {},
 	"Studio One Tracks":     {},
 	"Studio One All Access": {},
 	"Tiny Desk Radio":       {},
+	"UnderCurrents":         {},
 	"World Cafe":            {},
 }
 

@@ -50,16 +50,14 @@ func NewApplication(ctx context.Context, cfg config.Config) (Application, func()
 		panic(fmt.Errorf("failed to open database: %w", err))
 	}
 
-	closer := func() {
-		err := db.Close()
-		if err != nil {
-			slog.Warn("error closing database", slog.Any("error", err))
-		}
-	}
-
 	err = storage.InitializeSchema(ctx, db)
 	if err != nil {
 		panic(fmt.Errorf("failed to initialize schema: %w", err))
+	}
+
+	srv := &http.Server{
+		Addr:    ":3000",
+		Handler: nil, // Use http.DefaultServeMux
 	}
 
 	// A callback endpoint is required to complete the OAuth authentication code flow
@@ -69,6 +67,20 @@ func NewApplication(ctx context.Context, cfg config.Config) (Application, func()
 			panic(fmt.Errorf("failed to start http server: %w", err))
 		}
 	}()
+
+	closer := func() {
+		err := db.Close()
+		if err != nil {
+			slog.Warn("error closing database", slog.Any("error", err))
+		}
+
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := srv.Shutdown(shutdownCtx); err != nil {
+			slog.Warn("error shutting down server", slog.Any("error", err))
+		}
+	}
 
 	spotifyClient := setupSpotifyClient(ctx, cfg.SpotifyClient)
 	repository := storage.NewRepository(db)

@@ -27,7 +27,7 @@ func New(cfg Config) *Client {
 			BaseURL:          cfg.BaseURL,
 			Client:           cfg.Client,
 			LimitWindow:      30,
-			LimitNumRequests: 180,
+			LimitNumRequests: 165,
 			LimitBatchSize:   6,
 		}),
 	}

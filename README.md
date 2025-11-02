@@ -16,7 +16,7 @@ The playlist generator currently supports two modes `single` and `recurring`.
 
 The `single` mode in combination with the `date` option can be used to update a playlist with songs 
 played on a specific date. The `single` mode in combination with the `month` flag will create a playlist with
-alls songs played from a source in the given month. 
+all songs played from a source in the given month. 
 
 The `recurring` flag can be used to run the tool in the background to add songs played from a source in real time. For 
 example, if the interval is set to `5` minutes the sources playlist for the current month will be updated every five 

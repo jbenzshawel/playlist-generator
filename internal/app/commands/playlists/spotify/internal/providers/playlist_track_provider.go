@@ -3,7 +3,6 @@ package providers
 import (
 	"context"
 	"log/slog"
-	"sync"
 
 	"golang.org/x/sync/errgroup"
 
@@ -38,35 +37,46 @@ func (p *playlistTrackProvider) GetTracks(ctx context.Context, playlistID string
 
 	tracks = append(tracks, pageTracks(page)...)
 
-	if page.Total < maxPageSize {
+	if page.Total <= maxPageSize {
 		return tracks, nil
 	}
 
-	var l sync.Mutex
 	g, gCtx := errgroup.WithContext(ctx)
-	g.SetLimit(10) // Set limit to prevent being rate limited
+	g.SetLimit(6) // Set limit to prevent being rate limited
 
-	pages := page.Total / maxPageSize
+	pages := (page.Total + maxPageSize - 1) / maxPageSize
+
+	pageResults := make(chan []models.SimpleTrack, pages)
+
 	// start idx at 1 since we've already loaded the first page
 	for idx := 1; idx < pages; idx++ {
 		g.Go(func() error {
-			l.Lock()
-			defer l.Unlock()
-
 			offset := idx * maxPageSize
 			reqPage, err := p.getter.GetPlaylistTracks(gCtx, playlistID, maxPageSize, offset)
 			if err != nil {
 				return err
 			}
 
-			tracks = append(tracks, pageTracks(reqPage)...)
-
-			return nil
+			select {
+			case <-gCtx.Done():
+				return gCtx.Err()
+			case pageResults <- pageTracks(reqPage):
+				return nil
+			}
 		})
 	}
 
-	err = g.Wait()
-	if err != nil {
+	go func() {
+		g.Wait() // Wait for all workers in the group to finish
+		close(pageResults)
+	}()
+
+	for pr := range pageResults {
+		tracks = append(tracks, pr...)
+	}
+
+	// Return any error from the worker pool
+	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 

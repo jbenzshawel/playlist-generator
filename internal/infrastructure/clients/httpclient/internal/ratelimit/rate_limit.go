@@ -78,7 +78,7 @@ func (r *RateLimit) Limited() bool {
 // duration.
 func (r *RateLimit) SetLimited(ctx context.Context, d time.Duration) {
 	r.mu.Lock()
-	// Check again in case value changes after lock acquired
+	// Check after lock in case value changes after lock acquired
 	if r.limited.Load() {
 		r.mu.Unlock()
 		return
@@ -133,4 +133,9 @@ func (r *RateLimit) Increment(ctx context.Context) {
 		slog.Warn("bucket limit reached max requests")
 		r.SetLimited(ctx, bucketLimitWaitDuration)
 	}
+}
+
+// Count returns the current request count in the sliding window
+func (r *RateLimit) Count() int64 {
+	return r.window.Count()
 }

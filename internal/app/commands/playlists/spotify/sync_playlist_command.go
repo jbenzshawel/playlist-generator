@@ -52,7 +52,7 @@ type syncPlaylistCommandHandler struct {
 
 func (c *syncPlaylistCommandHandler) Execute(ctx context.Context, cmd SyncPlaylistCommand) (any, error) {
 	startDate := cmd.Playlist.LastDaySynced()
-	if cmd.Date < cmd.Playlist.LastDaySynced() {
+	if startDate == "" || cmd.Date < cmd.Playlist.LastDaySynced() {
 		startDate = cmd.Playlist.StartDate()
 	}
 
