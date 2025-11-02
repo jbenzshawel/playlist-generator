@@ -77,6 +77,10 @@ func (r *RateLimit) Limited() bool {
 // SetLimited will configure the RateLimit to be Limited for the configured
 // duration.
 func (r *RateLimit) SetLimited(ctx context.Context, d time.Duration) {
+	if r.limited.Load() {
+		return
+	}
+
 	r.mu.Lock()
 	// Check after lock in case value changes after lock acquired
 	if r.limited.Load() {
@@ -96,6 +100,8 @@ func (r *RateLimit) SetLimited(ctx context.Context, d time.Duration) {
 		case <-time.After(d):
 			r.limited.Swap(false)
 			close(doneChan)
+
+			slog.Debug("client circuit closed")
 		}
 	}()
 
@@ -104,12 +110,21 @@ func (r *RateLimit) SetLimited(ctx context.Context, d time.Duration) {
 // WaitTimeAfter can be called when Limited returns true to wait until
 // a rate limit time after has lapsed.
 func (r *RateLimit) WaitTimeAfter(ctx context.Context) {
+	start := time.Now()
+	defer func() {
+		slog.Debug("closed circuit wait time:", slog.Any("dur", time.Since(start).Seconds()))
+	}()
+
 	if !r.limited.Load() {
 		return
 	}
 
-	// Lock to safely get the *current* limitDone channel
 	r.mu.Lock()
+	// Check after lock in case value changes after lock acquired
+	if !r.limited.Load() {
+		r.mu.Unlock()
+		return
+	}
 	doneChan := r.limitDone
 	r.mu.Unlock()
 
@@ -125,6 +140,10 @@ func (r *RateLimit) WaitTimeAfter(ctx context.Context) {
 //
 // Note: if the RateLimit was not configured WithClientLimits this is a noop.
 func (r *RateLimit) Increment(ctx context.Context) {
+	if r.limited.Load() {
+		return
+	}
+
 	r.window.Increment()
 
 	// Include batchSize in count to better account for concurrent requests.
