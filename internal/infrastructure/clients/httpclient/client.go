@@ -48,7 +48,7 @@ type Config struct {
 	// LimitNumRequests optional max num requests in a window
 	LimitNumRequests int
 	// LimitBatchSize should be set if client requests will be batched. Configuring
-	// this value takes into account batch size when calculating client size limits.
+	// this value takes into account batch size when calculating client side limits.
 	LimitBatchSize int
 }
 
