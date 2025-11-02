@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"golang.org/x/oauth2"
 )
@@ -62,6 +63,8 @@ func (a *authenticator) GetAuthCodeCallbackHandler(ctx context.Context, chOAuthC
 		}
 
 		client := a.oauthCfg.Client(ctx, tok)
+
+		client.Timeout = 10 * time.Second
 		chOAuthClient <- client
 	}
 }
