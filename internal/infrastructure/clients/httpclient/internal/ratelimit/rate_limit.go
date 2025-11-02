@@ -76,7 +76,7 @@ func (r *RateLimit) Limited() bool {
 
 // SetLimited will configure the RateLimit to be Limited for the configured
 // duration.
-func (r *RateLimit) SetLimited(ctx context.Context, d time.Duration) {
+func (r *RateLimit) SetLimited(d time.Duration) {
 	if r.limited.Load() {
 		return
 	}
@@ -95,14 +95,16 @@ func (r *RateLimit) SetLimited(ctx context.Context, d time.Duration) {
 	slog.Debug("client circuit open")
 
 	go func() {
-		select {
-		case <-ctx.Done():
-		case <-time.After(d):
-			r.limited.Swap(false)
-			close(doneChan)
+		// We do NOT select on ctx.Done() here. The clearing of a global
+		// rate limit should not be tied to the context of the request that
+		// triggered it since cancelling thr original request's context could
+		// lead to the doneChan never closing and circuit always being open.
+		<-time.After(d)
 
-			slog.Debug("client circuit closed")
-		}
+		r.limited.Swap(false)
+		close(doneChan)
+
+		slog.Debug("client circuit closed")
 	}()
 
 }
@@ -130,7 +132,9 @@ func (r *RateLimit) WaitTimeAfter(ctx context.Context) {
 
 	select {
 	case <-ctx.Done():
+		return
 	case <-doneChan: // This will unblock when close(doneChan) is called
+		return
 	}
 }
 
@@ -139,7 +143,7 @@ func (r *RateLimit) WaitTimeAfter(ctx context.Context) {
 // the fixed bucketLimitWaitDuration (TODO: make this configurable?).
 //
 // Note: if the RateLimit was not configured WithClientLimits this is a noop.
-func (r *RateLimit) Increment(ctx context.Context) {
+func (r *RateLimit) Increment() {
 	if r.limited.Load() {
 		return
 	}
@@ -150,7 +154,7 @@ func (r *RateLimit) Increment(ctx context.Context) {
 	count := r.window.Count() + r.batchSize
 	if r.maxRequests > 0 && count > r.maxRequests {
 		slog.Warn("bucket limit reached max requests")
-		r.SetLimited(ctx, bucketLimitWaitDuration)
+		r.SetLimited(bucketLimitWaitDuration)
 	}
 }
 

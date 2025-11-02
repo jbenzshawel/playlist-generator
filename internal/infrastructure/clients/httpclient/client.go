@@ -164,7 +164,7 @@ func (c *retryingClient) Do(req *http.Request) (*http.Response, error) {
 
 		wait := c.defaultWaitStrategy(attempt)
 
-		c.rateLimit.Increment(req.Context())
+		c.rateLimit.Increment()
 
 		resp, err := c.client.Do(clone)
 		if err != nil {
@@ -220,7 +220,7 @@ func (c *retryingClient) defaultWaitStrategy(attempt int) time.Duration {
 
 func (c *retryingClient) sleep(ctx context.Context, d time.Duration, isRateLimited bool) {
 	if isRateLimited {
-		c.rateLimit.SetLimited(ctx, d)
+		c.rateLimit.SetLimited(d)
 	}
 
 	select {
