@@ -143,7 +143,7 @@ func TestRetryingClient_Do_ClientLimiter_RateLimited(t *testing.T) {
 		require.Equal(t, http.StatusOK, statusCode)
 	}
 
-	assert.LessOrEqual(t, rateLimitCount.Load(), int32(batchSize))
+	assert.Less(t, rateLimitCount.Load(), int32(reqLimit))
 }
 
 func TestRetryingClient_Do_ClientLimiter(t *testing.T) {

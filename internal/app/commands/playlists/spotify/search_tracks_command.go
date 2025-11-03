@@ -45,7 +45,7 @@ func (t *searchTracksCommandHandler) Execute(ctx context.Context, _ SearchTracks
 
 	g, gCtx := errgroup.WithContext(ctx)
 
-	g.SetLimit(10)
+	g.SetLimit(8)
 
 	for idx := 0; idx < len(songs); idx++ {
 		g.Go(func() error {

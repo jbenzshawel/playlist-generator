@@ -42,11 +42,11 @@ func (p *playlistTrackProvider) GetTracks(ctx context.Context, playlistID string
 	}
 
 	g, gCtx := errgroup.WithContext(ctx)
-	g.SetLimit(6) // Set limit to prevent being rate limited
+	g.SetLimit(8) // Set limit to prevent being rate limited
 
 	pages := (page.Total + maxPageSize - 1) / maxPageSize
 
-	pageResults := make(chan []models.SimpleTrack, pages)
+	pageResults := make([][]models.SimpleTrack, pages)
 
 	// start idx at 1 since we've already loaded the first page
 	for idx := 1; idx < pages; idx++ {
@@ -57,27 +57,19 @@ func (p *playlistTrackProvider) GetTracks(ctx context.Context, playlistID string
 				return err
 			}
 
-			select {
-			case <-gCtx.Done():
-				return gCtx.Err()
-			case pageResults <- pageTracks(reqPage):
-				return nil
-			}
+			pageResults[idx] = pageTracks(reqPage)
+
+			return nil
 		})
-	}
-
-	go func() {
-		g.Wait() // Wait for all workers in the group to finish
-		close(pageResults)
-	}()
-
-	for pr := range pageResults {
-		tracks = append(tracks, pr...)
 	}
 
 	// Return any error from the worker pool
 	if err := g.Wait(); err != nil {
 		return nil, err
+	}
+
+	for _, pageResult := range pageResults {
+		tracks = append(tracks, pageResult...)
 	}
 
 	return tracks, nil
