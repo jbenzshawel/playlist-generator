@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"log/slog"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/internal/providers"
-	"github.com/jbenzshawel/playlist-generator/internal/common/async"
 	"github.com/jbenzshawel/playlist-generator/internal/common/decorator"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
@@ -42,34 +43,46 @@ func (t *searchTracksCommandHandler) Execute(ctx context.Context, _ SearchTracks
 
 	slog.Info("found unknown songs to search", slog.Int("numSongs", len(songs)))
 
-	// anything higher than 6 workers starts to get rate limited
-	err = async.ParallelFor(ctx, len(songs), 6, func(ctx context.Context, idx int) error {
-		defer func() {
-			if r := recover(); r != nil {
-				err = fmt.Errorf("panic occurred during searching for tracks: %v", r)
+	g, gCtx := errgroup.WithContext(ctx)
+
+	g.SetLimit(10)
+
+	for idx := 0; idx < len(songs); idx++ {
+		g.Go(func() error {
+			defer func() {
+				if r := recover(); r != nil {
+					err = fmt.Errorf("panic occurred during searching for tracks: %v", r)
+				}
+			}()
+
+			select {
+			case <-gCtx.Done():
+				return gCtx.Err()
+			default:
+				var track domain.SpotifyTrack
+				var err error
+				song := songs[idx]
+
+				track, err = t.provider.SearchTrack(ctx, song)
+				if err != nil {
+					slog.Warn("spotify track not found for song",
+						slog.Any("song", song),
+						slog.Any("error", err),
+					)
+					track = domain.NewNotFoundSpotifyTrack(song.ID())
+				}
+
+				err = t.repository.Insert(ctx, track)
+				if err != nil {
+					return fmt.Errorf("spotify track insert error: %w", err)
+				}
+
+				return nil
 			}
-		}()
+		})
+	}
 
-		var track domain.SpotifyTrack
-		var err error
-		song := songs[idx]
-
-		track, err = t.provider.SearchTrack(ctx, song)
-		if err != nil {
-			slog.Warn("spotify track not found for song",
-				slog.Any("song", song),
-				slog.Any("error", err),
-			)
-			track = domain.NewNotFoundSpotifyTrack(song.ID())
-		}
-
-		err = t.repository.Insert(ctx, track)
-		if err != nil {
-			return fmt.Errorf("spotify track insert error: %w", err)
-		}
-
-		return nil
-	})
+	err = g.Wait()
 	if err != nil {
 		return nil, err
 	}
