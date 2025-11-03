@@ -103,9 +103,6 @@ func NewApplication(ctx context.Context, cfg config.Config) (Application, func()
 }
 
 func setupSpotifyClient(ctx context.Context, clientConfig config.OAuthClient) *spotifyclient.Client {
-	// TODO: conditionally get auth code depending on Mode
-	// May have configuration Mode that runs in background downloading song lists
-	// and populating them with spotify metadata
 	auth := oauth.NewAuthenticator(oauth.AuthenticatorConfig{
 		ClientID:     clientConfig.ClientID,
 		ClientSecret: clientConfig.ClientSecret,
@@ -191,6 +188,8 @@ func (a Application) startRecurringJob(ctx context.Context, interval time.Durati
 			}
 		}
 	}()
+	
+	<-done
 }
 
 func (a Application) genStudioOneSpotifyPlaylistForMonth(ctx context.Context, month string) {
