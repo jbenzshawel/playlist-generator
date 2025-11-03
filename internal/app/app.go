@@ -62,7 +62,7 @@ func NewApplication(ctx context.Context, cfg config.Config) (Application, func()
 
 	// A callback endpoint is required to complete the OAuth authentication code flow
 	go func() {
-		err := http.ListenAndServe(":3000", nil)
+		err := srv.ListenAndServe()
 		if err != nil {
 			panic(fmt.Errorf("failed to start http server: %w", err))
 		}
