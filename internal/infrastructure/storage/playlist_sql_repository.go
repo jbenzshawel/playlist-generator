@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"time"
-
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
 
@@ -76,7 +74,7 @@ func (r *playlistSqlRepository) scanPlaylist(row *sql.Row) (domain.Playlist, err
 		return domain.Playlist{}, err
 	}
 
-	created, err := time.Parse(time.RFC3339, createdStr)
+	created, err := utcStringToTime(createdStr)
 	if err != nil {
 		return domain.Playlist{}, err
 	}

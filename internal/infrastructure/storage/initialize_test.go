@@ -12,6 +12,8 @@ import (
 )
 
 func TestInitializeSchema(t *testing.T) {
+	t.Parallel()
+
 	db := InitTestDB(t)
 
 	t.Run("expected tables exists", func(t *testing.T) {
