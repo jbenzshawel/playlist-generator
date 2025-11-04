@@ -38,6 +38,19 @@ func NewSongSource(sourceID, songHash string, sourceType SourceType, programName
 	}
 }
 
+func NewSongSourceFromDB(id uuid.UUID, sourceID, songHash string, sourceType SourceType, programName, day string, endTime, created time.Time) SongSource {
+	return SongSource{
+		id:          id,
+		sourceID:    sourceID,
+		songHash:    songHash,
+		sourceType:  sourceType,
+		programName: programName,
+		day:         day,
+		endTime:     endTime,
+		created:     created,
+	}
+}
+
 func (s SongSource) ID() uuid.UUID {
 	return s.id
 }
