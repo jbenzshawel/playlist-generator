@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
+	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/storage/internal/statements"
 )
 
 var _ domain.SpotifyTrackRepository = (*spotifyTrackSqlRepository)(nil)
@@ -133,12 +134,16 @@ func (r *spotifyTrackSqlRepository) GetTracksPlayedInRange(ctx context.Context, 
 }
 
 func (r *spotifyTrackSqlRepository) Insert(ctx context.Context, track domain.SpotifyTrack) error {
-	_, err := r.tx.ExecContext(
-		ctx,
-		`INSERT INTO spotify_tracks (id, uri, song_id, match_found)
-			VALUES (?,?,?,?);`,
-		track.TrackID(), track.URI(), track.SongID(), boolToInt(track.MatchFound()),
-	)
+	stmt, err := statements.Get(statements.InsertSpotifyTrackType)
+	if err != nil {
+		return err
+	}
+
+	_, err = r.tx.StmtContext(ctx, stmt).
+		ExecContext(
+			ctx,
+			track.TrackID(), track.URI(), track.SongID(), boolToInt(track.MatchFound()),
+		)
 	if err != nil {
 		return err
 	}

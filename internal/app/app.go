@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -45,14 +44,9 @@ func NewApplication(ctx context.Context, cfg config.Config) (Application, func()
 		panic(fmt.Errorf("failed to load config: %w", err))
 	}
 
-	db, err := sql.Open("sqlite", dsn)
+	db, dbCloser, err := storage.Initialize(ctx, dsn)
 	if err != nil {
-		panic(fmt.Errorf("failed to open database: %w", err))
-	}
-
-	err = storage.InitializeSchema(ctx, db)
-	if err != nil {
-		panic(fmt.Errorf("failed to initialize schema: %w", err))
+		panic(fmt.Errorf("failed to initialize database: %w", err))
 	}
 
 	srv := &http.Server{
@@ -69,10 +63,7 @@ func NewApplication(ctx context.Context, cfg config.Config) (Application, func()
 	}()
 
 	closer := func() {
-		err := db.Close()
-		if err != nil {
-			slog.Warn("error closing database", slog.Any("error", err))
-		}
+		dbCloser()
 
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()

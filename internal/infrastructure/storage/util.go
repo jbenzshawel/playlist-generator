@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"log/slog"
 	"time"
 )
 
@@ -23,15 +22,4 @@ func boolToInt(b bool) int {
 		return 1
 	}
 	return 0
-}
-
-type closer interface {
-	Close() error
-}
-
-func closeStatement(c closer) {
-	err := c.Close()
-	if err != nil {
-		slog.Warn("error closing prepared statement", slog.Any("error", err))
-	}
 }

@@ -14,14 +14,11 @@ import (
 func InitTestDB(t *testing.T) *sql.DB {
 	t.Helper()
 
-	db, err := sql.Open("sqlite", ":memory:")
-	require.NoError(t, err)
-
+	db, closer, err := Initialize(t.Context(), "file::memory:?mode=memory&cache=shared")
 	t.Cleanup(func() {
-		require.NoError(t, db.Close())
+		closer()
 	})
-
-	require.NoError(t, InitializeSchema(t.Context(), db))
+	require.NoError(t, err)
 
 	return db
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
+	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/storage/internal/statements"
 )
 
 func TestInitializeSchema(t *testing.T) {
@@ -50,6 +51,14 @@ func TestInitializeSchema(t *testing.T) {
 		for idx, expected := range domain.AllPlaylistTypes() {
 			assert.Equal(t, expected, domain.PlaylistType(actual[idx].id))
 			assert.Equal(t, expected.String(), actual[idx].name)
+		}
+	})
+
+	t.Run("statements prepared", func(t *testing.T) {
+		for _, st := range statements.AllTypes() {
+			stmt, err := statements.Get(st)
+			require.NoError(t, err)
+			require.NotNil(t, stmt)
 		}
 	})
 }
