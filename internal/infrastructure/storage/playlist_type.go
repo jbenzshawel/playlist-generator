@@ -12,7 +12,7 @@ var playlistTypeSchema string = `CREATE TABLE IF NOT EXISTS playlist_types (
 );`
 
 func initPlaylistTypes(db *sql.DB) error {
-	for _, pt := range domain.AllSourceTypes() {
+	for _, pt := range domain.AllPlaylistTypes() {
 		query := `INSERT INTO playlist_types (ID, Name)
 		SELECT ?, ?
 		WHERE NOT EXISTS (SELECT 1 FROM playlist_types WHERE id = ?);`

@@ -188,7 +188,7 @@ func (a Application) startRecurringJob(ctx context.Context, interval time.Durati
 			}
 		}
 	}()
-	
+
 	<-done
 }
 
