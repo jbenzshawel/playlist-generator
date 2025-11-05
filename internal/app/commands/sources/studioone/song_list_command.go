@@ -110,7 +110,7 @@ func (d *songListCommand) Execute(ctx context.Context, cmd SongListCommand) (any
 }
 
 func tryParseTime(t string) (time.Time, bool) {
-	parsedTime, err := time.Parse(dateformat.YearMonthDayTime, t)
+	parsedTime, err := time.Parse(time.DateTime, t)
 	ok := err != nil
 	if !ok {
 		parsedTime, err = time.Parse(dateformat.MonthDayYearTime, t)

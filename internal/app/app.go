@@ -158,7 +158,7 @@ func (a Application) startRecurringJob(ctx context.Context, interval time.Durati
 		for {
 			select {
 			case <-ticker.C:
-				date := time.Now().Format(dateformat.YearMonthDay)
+				date := time.Now().Format(time.DateOnly)
 				a.genStudioOneSpotifyPlaylistsForDay(ctx, date)
 			case <-ctx.Done():
 				slog.Info("stopping recurring job")
@@ -182,7 +182,7 @@ func (a Application) genStudioOneSpotifyPlaylistForMonth(ctx context.Context, mo
 		select {
 		case <-ctx.Done():
 		default:
-			a.genStudioOneSpotifyPlaylistsForDay(ctx, date.Format(dateformat.YearMonthDay))
+			a.genStudioOneSpotifyPlaylistsForDay(ctx, date.Format(time.DateOnly))
 
 			date = date.AddDate(0, 0, 1)
 		}

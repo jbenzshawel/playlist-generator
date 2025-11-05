@@ -46,7 +46,7 @@ type createPlaylistCommand struct {
 }
 
 func (c *createPlaylistCommand) Execute(ctx context.Context, cmd CreatePlaylistCommand) (CreatePlaylistCommandResult, error) {
-	date, err := time.Parse(dateformat.YearMonthDay, cmd.Date)
+	date, err := time.Parse(time.DateOnly, cmd.Date)
 	if err != nil {
 		return CreatePlaylistCommandResult{}, fmt.Errorf("invalid create playlist date: %w", err)
 	}

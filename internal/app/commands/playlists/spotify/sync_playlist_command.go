@@ -7,7 +7,6 @@ import (
 
 	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/internal/providers"
 	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
-	"github.com/jbenzshawel/playlist-generator/internal/common/dateformat"
 	"github.com/jbenzshawel/playlist-generator/internal/common/decorator"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
@@ -99,7 +98,7 @@ func (c *syncPlaylistCommandHandler) Execute(ctx context.Context, cmd SyncPlayli
 	}
 
 	// Set last date synced to yesterday since we want to pick up other songs from today
-	syncDate := time.Now().AddDate(0, 0, -1).Format(dateformat.YearMonthDay)
+	syncDate := time.Now().AddDate(0, 0, -1).Format(time.DateOnly)
 	err = c.playlistRepository.SetLastDaySynced(ctx, cmd.Playlist.ID(), syncDate)
 	if err != nil {
 		return nil, err

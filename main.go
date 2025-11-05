@@ -11,11 +11,10 @@ import (
 
 	"github.com/jbenzshawel/playlist-generator/internal/app"
 	"github.com/jbenzshawel/playlist-generator/internal/app/config"
-	"github.com/jbenzshawel/playlist-generator/internal/common/dateformat"
 )
 
 func main() {
-	defaultDate := time.Now().Format(dateformat.YearMonthDay)
+	defaultDate := time.Now().Format(time.DateOnly)
 	modeFlag := flag.String("mode", string(app.SingleMode), "the mode the generator runs (single or recurring)")
 	dateFlag := flag.String("date", defaultDate, "the date to download songs for in YYYY-MM-DD (single mode)")
 	monthFlag := flag.String("month", "", "the month to download songs for in YYYY-MM (single mode)")
