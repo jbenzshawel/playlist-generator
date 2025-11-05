@@ -68,6 +68,15 @@ func (r *spotifyTrackSqlRepository) GetTracksPlayedInRange(ctx context.Context, 
 	}
 	defer rows.Close()
 
+	results, err := scanSpotifyTracks(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
+func scanSpotifyTracks(rows *sql.Rows) ([]domain.SpotifyTrack, error) {
 	var results []domain.SpotifyTrack
 	for rows.Next() {
 		var (

@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"database/sql"
 	"testing"
 	"time"
 
@@ -13,8 +12,6 @@ import (
 )
 
 func TestSongSqlRepository(t *testing.T) {
-	t.Parallel()
-
 	now := formatDateTime(t, time.Now())
 
 	expectedSongs := []domain.Song{
@@ -49,11 +46,15 @@ func TestSongSqlRepository(t *testing.T) {
 
 	t.Run("commit", func(t *testing.T) {
 		require.NoError(t, tx.Commit())
+
+		actual := getAllSongs(t, storage.db)
+
+		assert.Equal(t, expectedSongs, actual)
 	})
 }
 
-func getAllSongs(t *testing.T, tx *sql.Tx) []domain.Song {
-	rows, err := tx.QueryContext(
+func getAllSongs(t *testing.T, db queryContexter) []domain.Song {
+	rows, err := db.QueryContext(
 		t.Context(),
 		`SELECT * FROM songs;`,
 	)

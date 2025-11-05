@@ -38,17 +38,17 @@ func AllTypes() []Type {
 	}
 }
 
-const (
-	insertSongSQL = `INSERT INTO songs (id, artist, track, album, upc, song_hash, created) 
+var statementsSQL = map[Type]string{
+	InsertSongType: `INSERT INTO songs (id, artist, track, album, upc, song_hash, created) 
 					VALUES (?,?,?, ?, ?, ?, ?)
-					ON CONFLICT (song_hash) DO NOTHING;`
+					ON CONFLICT (song_hash) DO NOTHING;`,
 
-	insertSongSourceSQL = `INSERT INTO song_sources (id, source_id, source_type_id, song_hash, program_name, date_played, end_time, created)
-			VALUES (?,?,?,?,?,?,?, ?);`
+	InsertSongSourceType: `INSERT INTO song_sources (id, source_id, source_type_id, song_hash, program_name, date_played, end_time, created)
+			VALUES (?,?,?,?,?,?,?, ?);`,
 
-	insertSpotifyTrackSQL = `INSERT INTO spotify_tracks (id, uri, song_id, match_found)
-			VALUES (?,?,?,?);`
-)
+	InsertSpotifyTrackType: `INSERT INTO spotify_tracks (id, uri, song_id, match_found)
+			VALUES (?,?,?,?);`,
+}
 
 type statements struct {
 	prepared map[Type]*sql.Stmt
@@ -59,17 +59,9 @@ func New(ctx context.Context, db *sql.DB) (*statements, error) {
 		prepared: make(map[Type]*sql.Stmt),
 	}
 
-	statementsToPrepare := []struct {
-		Type Type
-		SQL  string
-	}{
-		{InsertSongType, insertSongSQL},
-		{InsertSongSourceType, insertSongSourceSQL},
-		{InsertSpotifyTrackType, insertSpotifyTrackSQL},
-	}
-	for _, stmt := range statementsToPrepare {
+	for stmtType, stmtSQL := range statementsSQL {
 		var err error
-		s.prepared[stmt.Type], err = db.PrepareContext(ctx, stmt.SQL)
+		s.prepared[stmtType], err = db.PrepareContext(ctx, stmtSQL)
 		if err != nil {
 			return nil, err
 		}

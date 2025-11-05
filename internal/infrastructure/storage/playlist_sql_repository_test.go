@@ -11,8 +11,6 @@ import (
 )
 
 func TestPlaylistSqlRepository(t *testing.T) {
-	t.Parallel()
-
 	const (
 		id1 = "id1"
 		id2 = "id2"
@@ -41,6 +39,10 @@ func TestPlaylistSqlRepository(t *testing.T) {
 		for _, expected := range expectedPlaylists {
 			require.NoError(t, r.Insert(t.Context(), expected))
 		}
+
+		actual := getAllPlaylists(t, tx)
+
+		assert.Equal(t, expectedPlaylists, actual)
 	})
 
 	t.Run("get playlist by id", func(t *testing.T) {
@@ -75,9 +77,36 @@ func TestPlaylistSqlRepository(t *testing.T) {
 		playlist, err := r.GetPlaylistByID(t.Context(), id1)
 		require.NoError(t, err)
 		assert.Equal(t, lastSync, playlist.LastDaySynced())
+
+		expectedPlaylists[0] = playlist
 	})
 
 	t.Run("commit", func(t *testing.T) {
 		require.NoError(t, tx.Commit())
+
+		actual := getAllPlaylists(t, storage.db)
+
+		assert.Equal(t, expectedPlaylists, actual)
 	})
+}
+
+func getAllPlaylists(t *testing.T, db queryContexter) []domain.Playlist {
+	rows, err := db.QueryContext(
+		t.Context(),
+		`SELECT * FROM playlists;`,
+	)
+	require.NoError(t, err)
+
+	defer func() {
+		require.NoError(t, rows.Close())
+	}()
+
+	var results []domain.Playlist
+	for rows.Next() {
+		r, err := scanPlaylistRow(rows)
+		require.NoError(t, err)
+		results = append(results, r)
+	}
+
+	return results
 }

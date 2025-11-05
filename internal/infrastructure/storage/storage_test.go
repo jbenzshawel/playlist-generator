@@ -13,6 +13,8 @@ import (
 )
 
 func TestStorage(t *testing.T) {
+	t.Parallel()
+
 	storage := InitTestStorage(t)
 
 	t.Run("expected tables exists", func(t *testing.T) {

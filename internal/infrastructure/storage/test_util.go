@@ -3,6 +3,8 @@
 package storage
 
 import (
+	"context"
+	"database/sql"
 	"testing"
 	"time"
 
@@ -32,4 +34,8 @@ func formatDateTime(t *testing.T, dt time.Time) time.Time {
 	require.NoError(t, err)
 
 	return dt
+}
+
+type queryContexter interface {
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
 }

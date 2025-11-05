@@ -97,7 +97,7 @@ func (r *RateLimit) SetLimited(d time.Duration) {
 	go func() {
 		// We do NOT select on ctx.Done() here. The clearing of a global
 		// rate limit should not be tied to the context of the request that
-		// triggered it since cancelling thr original request's context could
+		// triggered it since cancelling the original request's context could
 		// lead to the doneChan never closing and circuit always being open.
 		<-time.After(d)
 
