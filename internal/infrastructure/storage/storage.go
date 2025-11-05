@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log/slog"
 
+	_ "modernc.org/sqlite"
+	
 	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/storage/internal/statements"
 )
 

@@ -9,8 +9,6 @@ import (
 	"os/signal"
 	"time"
 
-	_ "modernc.org/sqlite"
-
 	"github.com/jbenzshawel/playlist-generator/internal/app"
 	"github.com/jbenzshawel/playlist-generator/internal/app/config"
 	"github.com/jbenzshawel/playlist-generator/internal/common/dateformat"
