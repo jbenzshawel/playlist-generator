@@ -40,10 +40,14 @@ func main() {
 	application, closer := app.NewApplication(ctx, cfg)
 	defer closer()
 
-	application.Run(ctx, app.RunConfig{
-		Mode:     app.Mode(*modeFlag),
-		Date:     *dateFlag,
-		Month:    *monthFlag,
-		Interval: time.Duration(*intervalFlag) * time.Minute,
-	})
+	select {
+	case <-ctx.Done():
+	default:
+		application.Run(ctx, app.RunConfig{
+			Mode:     app.Mode(*modeFlag),
+			Date:     *dateFlag,
+			Month:    *monthFlag,
+			Interval: time.Duration(*intervalFlag) * time.Minute,
+		})
+	}
 }
