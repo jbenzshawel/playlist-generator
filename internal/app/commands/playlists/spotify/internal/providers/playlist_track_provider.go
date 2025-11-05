@@ -42,7 +42,7 @@ func (p *playlistTrackProvider) GetTracks(ctx context.Context, playlistID string
 	}
 
 	g, gCtx := errgroup.WithContext(ctx)
-	g.SetLimit(8) // Set limit to prevent being rate limited
+	g.SetLimit(6) // Set limit to prevent being rate limited
 
 	pages := (page.Total + maxPageSize - 1) / maxPageSize
 
