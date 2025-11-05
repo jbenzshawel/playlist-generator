@@ -3,7 +3,6 @@
 package storage
 
 import (
-	"database/sql"
 	"testing"
 	"time"
 
@@ -11,16 +10,16 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func InitTestDB(t *testing.T) *sql.DB {
+func InitTestStorage(t *testing.T) *Storage {
 	t.Helper()
 
-	db, closer, err := Initialize(t.Context(), "file::memory:?mode=memory&cache=shared")
+	storage, err := Initialize(t.Context(), "file::memory:?mode=memory&cache=shared")
 	t.Cleanup(func() {
-		closer()
+		storage.Close()
 	})
 	require.NoError(t, err)
 
-	return db
+	return storage
 }
 
 // formatDateTime is a test helper for formating time on an expected struct

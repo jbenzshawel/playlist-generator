@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/google/uuid"
+
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/storage/internal/statements"
 )
@@ -25,7 +27,8 @@ var songSourceSchema string = `CREATE TABLE IF NOT EXISTS song_sources (
 );`
 
 type songSourceSqlRepository struct {
-	tx *sql.Tx
+	tx    *sql.Tx
+	stmts statementGetter
 }
 
 func (r *songSourceSqlRepository) SetTransaction(tx *sql.Tx) {
@@ -33,7 +36,7 @@ func (r *songSourceSqlRepository) SetTransaction(tx *sql.Tx) {
 }
 
 func (r *songSourceSqlRepository) BulkInsert(ctx context.Context, songs []domain.SongSource) error {
-	stmt, err := statements.Get(statements.InsertSongSourceType)
+	stmt, err := r.stmts.Get(statements.InsertSongSourceType)
 	if err != nil {
 		return err
 	}
@@ -58,4 +61,50 @@ func (r *songSourceSqlRepository) BulkInsert(ctx context.Context, songs []domain
 	slog.Debug("insert song sources complete", slog.Int64("count", insertCount))
 
 	return nil
+}
+
+func scanSourceSourceRows(rows *sql.Rows) ([]domain.SongSource, error) {
+	var results []domain.SongSource
+	for rows.Next() {
+		var (
+			idStr       string
+			sourceID    string
+			songHash    string
+			sourceType  domain.SourceType
+			programName string
+			day         string
+			endTimeStr  string
+			createdStr  string
+		)
+
+		err := rows.Scan(&idStr, &sourceID, &songHash, &sourceType, &programName, &day, &endTimeStr, &createdStr)
+		if err != nil {
+			return nil, err
+		}
+
+		id, err := uuid.Parse(idStr)
+		if err != nil {
+			return nil, err
+		}
+
+		endTime, err := utcStringToTime(endTimeStr)
+		if err != nil {
+			return nil, err
+		}
+
+		created, err := utcStringToTime(createdStr)
+		if err != nil {
+			return nil, err
+		}
+
+		s := domain.NewSongSourceFromDB(id, sourceID, songHash, sourceType, programName, day, endTime, created)
+		results = append(results, s)
+	}
+
+	err := rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }

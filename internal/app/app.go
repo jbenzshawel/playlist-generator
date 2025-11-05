@@ -44,37 +44,25 @@ func NewApplication(ctx context.Context, cfg config.Config) (Application, func()
 		panic(fmt.Errorf("failed to load config: %w", err))
 	}
 
-	db, dbCloser, err := storage.Initialize(ctx, dsn)
+	store, err := storage.Initialize(ctx, dsn)
 	if err != nil {
 		panic(fmt.Errorf("failed to initialize database: %w", err))
 	}
 
-	srv := &http.Server{
-		Addr:    ":3000",
-		Handler: nil, // Use http.DefaultServeMux
-	}
-
 	// A callback endpoint is required to complete the OAuth authentication code flow
 	go func() {
-		err := srv.ListenAndServe()
+		err := http.ListenAndServe(":3000", nil)
 		if err != nil {
 			panic(fmt.Errorf("failed to start http server: %w", err))
 		}
 	}()
 
 	closer := func() {
-		dbCloser()
-
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		if err := srv.Shutdown(shutdownCtx); err != nil {
-			slog.Warn("error shutting down server", slog.Any("error", err))
-		}
+		store.Close()
 	}
 
 	spotifyClient := setupSpotifyClient(ctx, cfg.SpotifyClient)
-	repository := storage.NewRepository(db)
+	repository := storage.NewRepository(store)
 
 	iprBaseURL, err := url.Parse(cfg.IowaPublicRadio.BaseURL)
 	if err != nil {

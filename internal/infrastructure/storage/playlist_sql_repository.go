@@ -35,7 +35,7 @@ func (r *playlistSqlRepository) GetPlaylistByID(ctx context.Context, id string) 
 		id,
 	)
 
-	p, err := r.scanPlaylist(row)
+	p, err := r.scanPlaylistRow(row)
 	if err != nil {
 		return domain.Playlist{}, err
 	}
@@ -48,7 +48,7 @@ func (r *playlistSqlRepository) GetPlaylistByDate(ctx context.Context, playlistT
 		playlistType, date,
 	)
 
-	p, err := r.scanPlaylist(row)
+	p, err := r.scanPlaylistRow(row)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return domain.Playlist{}, nil
@@ -58,7 +58,7 @@ func (r *playlistSqlRepository) GetPlaylistByDate(ctx context.Context, playlistT
 	return p, nil
 }
 
-func (r *playlistSqlRepository) scanPlaylist(row *sql.Row) (domain.Playlist, error) {
+func (r *playlistSqlRepository) scanPlaylistRow(row *sql.Row) (domain.Playlist, error) {
 	var (
 		id            string
 		uri           string

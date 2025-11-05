@@ -12,10 +12,8 @@ import (
 	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/storage/internal/statements"
 )
 
-func TestInitializeSchema(t *testing.T) {
-	t.Parallel()
-
-	db := InitTestDB(t)
+func TestStorage(t *testing.T) {
+	storage := InitTestStorage(t)
 
 	t.Run("expected tables exists", func(t *testing.T) {
 		expectedTables := map[string]struct{}{
@@ -27,7 +25,7 @@ func TestInitializeSchema(t *testing.T) {
 			"playlists":      {},
 		}
 
-		actualTables := listTables(t, db)
+		actualTables := listTables(t, storage.db)
 		assert.Equal(t, len(expectedTables), len(actualTables))
 
 		for _, actualTable := range actualTables {
@@ -37,7 +35,7 @@ func TestInitializeSchema(t *testing.T) {
 	})
 
 	t.Run("source types lookup", func(t *testing.T) {
-		actual := getLookupValues(t, db, "source_types")
+		actual := getLookupValues(t, storage.db, "source_types")
 
 		for idx, expected := range domain.AllSourceTypes() {
 			assert.Equal(t, expected, domain.SourceType(actual[idx].id))
@@ -46,7 +44,7 @@ func TestInitializeSchema(t *testing.T) {
 	})
 
 	t.Run("playlist types lookup", func(t *testing.T) {
-		actual := getLookupValues(t, db, "playlist_types")
+		actual := getLookupValues(t, storage.db, "playlist_types")
 
 		for idx, expected := range domain.AllPlaylistTypes() {
 			assert.Equal(t, expected, domain.PlaylistType(actual[idx].id))
@@ -56,7 +54,7 @@ func TestInitializeSchema(t *testing.T) {
 
 	t.Run("statements prepared", func(t *testing.T) {
 		for _, st := range statements.AllTypes() {
-			stmt, err := statements.Get(st)
+			stmt, err := storage.stmts.Get(st)
 			require.NoError(t, err)
 			require.NotNil(t, stmt)
 		}

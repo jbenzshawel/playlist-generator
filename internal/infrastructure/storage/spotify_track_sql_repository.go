@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"database/sql"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -22,7 +21,8 @@ var spotifyTrackSchema string = `CREATE TABLE IF NOT EXISTS spotify_tracks (
 );`
 
 type spotifyTrackSqlRepository struct {
-	tx *sql.Tx
+	tx    *sql.Tx
+	stmts statementGetter
 }
 
 func (r *spotifyTrackSqlRepository) SetTransaction(tx *sql.Tx) {
@@ -42,40 +42,8 @@ func (r *spotifyTrackSqlRepository) GetUnknownSongs(ctx context.Context) ([]doma
 	}
 	defer rows.Close()
 
-	var results []domain.Song
-	for rows.Next() {
-		var (
-			idStr      string
-			artist     string
-			track      string
-			album      string
-			upc        sql.NullString
-			songHash   string
-			createdStr string
-		)
-
-		if err := rows.Scan(&idStr, &artist, &track, &album, &upc, &songHash, &createdStr); err != nil {
-			return nil, err
-		}
-
-		id, err := uuid.Parse(idStr)
-		if err != nil {
-			return nil, err
-		}
-		created, err := time.Parse(time.RFC3339, createdStr)
-		if err != nil {
-			return nil, err
-		}
-
-		upcVal := ""
-		if upc.Valid {
-			upcVal = upc.String
-		}
-
-		s := domain.NewSongFromDB(id, artist, track, album, upcVal, songHash, created)
-		results = append(results, s)
-	}
-	if err := rows.Err(); err != nil {
+	results, err := scanSongRows(rows)
+	if err != nil {
 		return nil, err
 	}
 
@@ -134,7 +102,7 @@ func (r *spotifyTrackSqlRepository) GetTracksPlayedInRange(ctx context.Context, 
 }
 
 func (r *spotifyTrackSqlRepository) Insert(ctx context.Context, track domain.SpotifyTrack) error {
-	stmt, err := statements.Get(statements.InsertSpotifyTrackType)
+	stmt, err := r.stmts.Get(statements.InsertSpotifyTrackType)
 	if err != nil {
 		return err
 	}

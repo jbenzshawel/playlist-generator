@@ -29,11 +29,11 @@ func TestPlaylistSqlRepository(t *testing.T) {
 		domain.NewPlaylistFromDB(id3, "uri3", date3, "name3", domain.SpotifyPlaylistType, domain.StudioOneSourceType, "", formatDateTime(t, time.Now())),
 	}
 
-	db := InitTestDB(t)
+	storage := InitTestStorage(t)
 
 	r := &playlistSqlRepository{}
 
-	tx, err := db.BeginTx(t.Context(), nil)
+	tx, err := storage.db.BeginTx(t.Context(), nil)
 	require.NoError(t, err)
 	r.SetTransaction(tx)
 

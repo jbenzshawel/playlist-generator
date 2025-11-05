@@ -58,12 +58,12 @@ func (r *repository) Rollback() error {
 	return r.tx.Rollback()
 }
 
-func NewRepository(db *sql.DB) *repository {
+func NewRepository(s *Storage) *repository {
 	return &repository{
-		db:           db,
-		song:         &songSqlRepository{},
-		songSource:   &songSourceSqlRepository{},
-		spotifyTrack: &spotifyTrackSqlRepository{},
+		db:           s.db,
+		song:         &songSqlRepository{stmts: s.stmts},
+		songSource:   &songSourceSqlRepository{stmts: s.stmts},
+		spotifyTrack: &spotifyTrackSqlRepository{stmts: s.stmts},
 		playlist:     &playlistSqlRepository{},
 	}
 }

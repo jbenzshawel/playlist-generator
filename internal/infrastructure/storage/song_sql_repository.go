@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/google/uuid"
+
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/storage/internal/statements"
 )
@@ -23,7 +25,8 @@ var songSchema string = `CREATE TABLE IF NOT EXISTS songs (
 );`
 
 type songSqlRepository struct {
-	tx *sql.Tx
+	tx    *sql.Tx
+	stmts statementGetter
 }
 
 func (r *songSqlRepository) SetTransaction(tx *sql.Tx) {
@@ -31,7 +34,7 @@ func (r *songSqlRepository) SetTransaction(tx *sql.Tx) {
 }
 
 func (r *songSqlRepository) BulkInsert(ctx context.Context, songs []domain.Song) error {
-	stmt, err := statements.Get(statements.InsertSongType)
+	stmt, err := r.stmts.Get(statements.InsertSongType)
 	if err != nil {
 		return err
 	}
@@ -56,4 +59,46 @@ func (r *songSqlRepository) BulkInsert(ctx context.Context, songs []domain.Song)
 	slog.Debug("insert songs complete", slog.Int64("count", insertCount))
 
 	return nil
+}
+
+func scanSongRows(rows *sql.Rows) ([]domain.Song, error) {
+	var results []domain.Song
+	for rows.Next() {
+		var (
+			idStr      string
+			artist     string
+			track      string
+			album      string
+			upc        sql.NullString
+			songHash   string
+			createdStr string
+		)
+
+		if err := rows.Scan(&idStr, &artist, &track, &album, &upc, &songHash, &createdStr); err != nil {
+			return nil, err
+		}
+
+		id, err := uuid.Parse(idStr)
+		if err != nil {
+			return nil, err
+		}
+
+		created, err := utcStringToTime(createdStr)
+		if err != nil {
+			return nil, err
+		}
+
+		upcVal := ""
+		if upc.Valid {
+			upcVal = upc.String
+		}
+
+		s := domain.NewSongFromDB(id, artist, track, album, upcVal, songHash, created)
+		results = append(results, s)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }

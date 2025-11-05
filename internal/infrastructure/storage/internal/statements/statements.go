@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
-	"sync"
 )
 
 type Type int
@@ -51,14 +50,14 @@ const (
 			VALUES (?,?,?,?);`
 )
 
-var (
-	prepared = map[Type]*sql.Stmt{}
+type statements struct {
+	prepared map[Type]*sql.Stmt
+}
 
-	syncOnce = sync.Once{}
-)
-
-func Prepare(ctx context.Context, db *sql.DB) error {
-	var syncErr error
+func New(ctx context.Context, db *sql.DB) (*statements, error) {
+	s := &statements{
+		prepared: make(map[Type]*sql.Stmt),
+	}
 
 	statementsToPrepare := []struct {
 		Type Type
@@ -68,31 +67,27 @@ func Prepare(ctx context.Context, db *sql.DB) error {
 		{InsertSongSourceType, insertSongSourceSQL},
 		{InsertSpotifyTrackType, insertSpotifyTrackSQL},
 	}
-
-	syncOnce.Do(func() {
+	for _, stmt := range statementsToPrepare {
 		var err error
-		for _, s := range statementsToPrepare {
-			prepared[s.Type], err = db.PrepareContext(ctx, s.SQL)
-			if err != nil {
-				syncErr = err
-				return
-			}
+		s.prepared[stmt.Type], err = db.PrepareContext(ctx, stmt.SQL)
+		if err != nil {
+			return nil, err
 		}
-	})
+	}
 
-	return syncErr
+	return s, nil
 }
 
-func Get(st Type) (*sql.Stmt, error) {
-	stmt, ok := prepared[st]
+func (s *statements) Get(st Type) (*sql.Stmt, error) {
+	stmt, ok := s.prepared[st]
 	if !ok {
 		return nil, fmt.Errorf("statement %s not found", st.String())
 	}
 	return stmt, nil
 }
 
-func Close() {
-	for _, stmt := range prepared {
+func (s *statements) Close() {
+	for _, stmt := range s.prepared {
 		err := stmt.Close()
 		if err != nil {
 			slog.Warn("error closing prepared statement", slog.Any("error", err))
