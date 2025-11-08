@@ -3,14 +3,12 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
 	"time"
 
 	"github.com/jbenzshawel/playlist-generator/internal/app"
-	"github.com/jbenzshawel/playlist-generator/internal/app/config"
 )
 
 func main() {
@@ -29,15 +27,10 @@ func main() {
 		slog.SetLogLoggerLevel(slog.LevelInfo)
 	}
 
-	cfg, err := config.Load()
-	if err != nil {
-		panic(fmt.Errorf("failed to load config: %w", err))
-	}
-
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer stop()
 
-	application, closer := app.NewApplication(ctx, cfg)
+	application, closer := app.NewApplication(ctx)
 	defer closer()
 
 	select {

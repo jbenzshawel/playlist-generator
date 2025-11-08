@@ -38,7 +38,7 @@ type commands struct {
 	Playlists playlists.Commands
 }
 
-func NewApplication(ctx context.Context, cfg config.Config) (Application, func()) {
+func NewApplication(ctx context.Context) (Application, func()) {
 	cfg, err := config.Load()
 	if err != nil {
 		panic(fmt.Errorf("failed to load config: %w", err))
