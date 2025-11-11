@@ -136,7 +136,10 @@ func (a Application) Run(ctx context.Context, cfg RunConfig) {
 		if cfg.Month != "" {
 			a.genStudioOneSpotifyPlaylistForMonth(ctx, cfg.Month)
 		} else {
-			a.genStudioOneSpotifyPlaylistsForDay(ctx, cfg.Date)
+			err := a.genStudioOneSpotifyPlaylistsForDay(ctx, cfg.Date)
+			if err != nil {
+				slog.Error("gen studio one playlist error", slog.Any("error", err), slog.String("date", cfg.Date))
+			}
 		}
 	case RecurringMode:
 		a.startRecurringJob(ctx, cfg.Interval)
@@ -159,7 +162,10 @@ func (a Application) startRecurringJob(ctx context.Context, interval time.Durati
 			select {
 			case <-ticker.C:
 				date := time.Now().Format(time.DateOnly)
-				a.genStudioOneSpotifyPlaylistsForDay(ctx, date)
+				err := a.genStudioOneSpotifyPlaylistsForDay(ctx, date)
+				if err != nil {
+					slog.Error("gen studio one playlist error", slog.Any("error", err), slog.String("date", date))
+				}
 			case <-ctx.Done():
 				slog.Info("stopping recurring job")
 				done <- true
@@ -182,31 +188,34 @@ func (a Application) genStudioOneSpotifyPlaylistForMonth(ctx context.Context, mo
 		select {
 		case <-ctx.Done():
 		default:
-			a.genStudioOneSpotifyPlaylistsForDay(ctx, date.Format(time.DateOnly))
-
+			day := date.Format(time.DateOnly)
+			err = a.genStudioOneSpotifyPlaylistsForDay(ctx, day)
+			if err != nil {
+				slog.Error("gen studio one playlist error", slog.Any("error", err), slog.String("date", day))
+			}
 			date = date.AddDate(0, 0, 1)
 		}
 	}
 }
 
-func (a Application) genStudioOneSpotifyPlaylistsForDay(ctx context.Context, date string) {
+func (a Application) genStudioOneSpotifyPlaylistsForDay(ctx context.Context, date string) error {
 	slog.Info("adding songs from Studio One to Spotify playlist", slog.String("date", date))
 
 	_, err := a.Sources.StudioOne.ListSongs.Execute(ctx, studioone.SongListCommand{Date: date})
 	if err != nil {
-		slog.Error("studio one download song list error", slog.Any("error", err))
+		return fmt.Errorf("studio one download song list error: %w", err)
 	}
 
 	_, err = a.Playlists.Spotify.SearchTracks.Execute(ctx, spotify.SearchTracksCommand{})
 	if err != nil {
-		slog.Error("spotify track update error", slog.Any("error", err))
+		return fmt.Errorf("spotify track update error: %w", err)
 	}
 
 	createRes, err := a.Playlists.Spotify.CreatePlaylist.Execute(ctx, spotify.CreatePlaylistCommand{
 		Date: date,
 	})
 	if err != nil {
-		slog.Error("create spotify playlist error", slog.Any("error", err))
+		return fmt.Errorf("create spotify playlist error: %w", err)
 	}
 
 	_, err = a.Playlists.Spotify.SyncPlaylist.Execute(ctx, spotify.SyncPlaylistCommand{
@@ -214,6 +223,8 @@ func (a Application) genStudioOneSpotifyPlaylistsForDay(ctx context.Context, dat
 		Date:     date,
 	})
 	if err != nil {
-		slog.Error("sync spotify playlist error", slog.Any("error", err))
+		return fmt.Errorf("sync spotify playlist error: %w", err)
 	}
+
+	return err
 }
