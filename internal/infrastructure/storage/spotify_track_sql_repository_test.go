@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -100,9 +101,9 @@ func TestSpotifyTrackSqlRepository_GetTracksPlayedInRange(t *testing.T) {
 		}
 
 		spotifyTracks = []domain.SpotifyTrack{
-			domain.NewSpotifyTrack(songID1, "trackID1", "upc1"),
-			domain.NewSpotifyTrack(songID2, "trackID2", "upc2"),
-			domain.NewSpotifyTrack(songID3, "trackID3", "upc3"),
+			domain.NewSpotifyTrack(songID1, "trackID1", "uri1"),
+			domain.NewSpotifyTrack(songID2, "trackID2", "uri2"),
+			domain.NewSpotifyTrack(songID3, "trackID3", "uri3"),
 		}
 	)
 
@@ -151,6 +152,42 @@ func TestSpotifyTrackSqlRepository_GetTracksPlayedInRange(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, spotifyTracks[1:2], actual)
 	})
+}
+
+func TestSpotifyTrackSqlRepository_GetRandomTracks(t *testing.T) {
+	storage := InitTestStorage(t)
+
+	tx, err := storage.db.BeginTx(t.Context(), nil)
+	require.NoError(t, err)
+
+	trackRepo := &spotifyTrackSqlRepository{tx: tx, stmts: storage.stmts}
+
+	for idx := range 30 {
+		track := domain.NewSpotifyTrack(uuid.New(), fmt.Sprintf("track%d", idx), fmt.Sprintf("uri%d", idx))
+		require.NoError(t, trackRepo.Insert(t.Context(), track))
+	}
+
+	actualTracks1, err := trackRepo.GetRandomTracks(t.Context(), 10)
+	require.NoError(t, err)
+
+	assertUniqueTracks(t, actualTracks1)
+	assert.Len(t, actualTracks1, 10)
+
+	actualTracks2, err := trackRepo.GetRandomTracks(t.Context(), 10)
+	require.NoError(t, err)
+
+	assertUniqueTracks(t, actualTracks2)
+	assert.Len(t, actualTracks2, 10)
+
+	assert.NotEqual(t, actualTracks1, actualTracks2)
+}
+
+func assertUniqueTracks(t *testing.T, tracks []domain.SpotifyTrack) {
+	trackURIs := map[string]struct{}{}
+	for _, track := range tracks {
+		trackURIs[track.URI()] = struct{}{}
+	}
+	assert.Len(t, tracks, len(trackURIs))
 }
 
 func getAllSpotifyTracks(t *testing.T, db queryContexter) []domain.SpotifyTrack {

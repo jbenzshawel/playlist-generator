@@ -76,6 +76,28 @@ func (r *spotifyTrackSqlRepository) GetTracksPlayedInRange(ctx context.Context, 
 	return results, nil
 }
 
+func (r *spotifyTrackSqlRepository) GetRandomTracks(ctx context.Context, numTracks int) ([]domain.SpotifyTrack, error) {
+	rows, err := r.tx.QueryContext(ctx,
+		`SELECT id, uri, song_id, match_found
+				FROM
+				spotify_tracks
+				WHERE ROWID IN (
+					SELECT ROWID FROM spotify_tracks WHERE match_found = 1 ORDER BY RANDOM() LIMIT ?
+				)`,
+		numTracks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	results, err := scanSpotifyTracks(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
 func scanSpotifyTracks(rows *sql.Rows) ([]domain.SpotifyTrack, error) {
 	var results []domain.SpotifyTrack
 	for rows.Next() {
