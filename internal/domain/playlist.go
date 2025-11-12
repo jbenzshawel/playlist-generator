@@ -114,11 +114,11 @@ func (p Playlist) Created() time.Time {
 	return p.created
 }
 
-func (s Playlist) LogValue() slog.Value {
+func (p Playlist) LogValue() slog.Value {
 	return slog.GroupValue(
-		slog.String("date", s.Date()),
-		slog.String("lastDaySynced", s.LastDaySynced()),
-		slog.String("name", s.Name()),
-		slog.String("uri", s.URI()),
+		slog.String("date", p.Date()),
+		slog.String("lastDaySynced", p.LastDaySynced()),
+		slog.String("name", p.Name()),
+		slog.String("uri", p.URI()),
 	)
 }

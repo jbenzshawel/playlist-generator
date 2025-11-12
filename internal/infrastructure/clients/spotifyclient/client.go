@@ -123,3 +123,19 @@ func (c *Client) AddItemsToPlaylist(ctx context.Context, playlistID string, requ
 
 	return playlist.SnapshotID, nil
 }
+
+func (c *Client) RemoveItemsFromPlaylist(ctx context.Context, playlistID string, request models.RemoveItemsFromPlaylistRequest) (string, error) {
+	resp, err := c.Delete(ctx, fmt.Sprintf("/playlists/%s/tracks", playlistID), httpclient.WithJSONBody(request))
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	playlist, err := decode.JSON[models.PlaylistSnapshot](resp)
+	if err != nil {
+		return "", err
+	}
+
+	return playlist.SnapshotID, nil
+}

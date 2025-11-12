@@ -1,7 +1,7 @@
 // Package ratelimit provides a way to handle rate limits client side.
 //
 // This package is intended to be used in combination with a http client
-// to coordinate concurrent http requests against a rate limited service.
+// to coordinate concurrent http requests against a rate limited services.
 package ratelimit
 
 import (

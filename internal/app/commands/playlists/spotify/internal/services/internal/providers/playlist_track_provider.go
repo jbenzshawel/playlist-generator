@@ -11,24 +11,32 @@ import (
 
 const maxPageSize = 50
 
-type PlaylistTrackGetter interface {
+type TrackGetter interface {
 	GetPlaylistTracks(ctx context.Context, playlistID string, limit, offset int) (models.PlaylistTrackPage, error)
 }
 
-func NewPlaylistTrackProvider(getter PlaylistTrackGetter) *playlistTrackProvider {
+type PlaylistTrackProvider interface {
+	GetTracks(ctx context.Context, playlistID string) ([]models.SimpleTrack, error)
+}
+
+func NewPlaylistTrackProvider(getter TrackGetter) PlaylistTrackProvider {
 	return &playlistTrackProvider{
 		getter: getter,
 	}
 }
 
 type playlistTrackProvider struct {
-	getter PlaylistTrackGetter
+	getter TrackGetter
 }
 
 func (p *playlistTrackProvider) GetTracks(ctx context.Context, playlistID string) ([]models.SimpleTrack, error) {
 	page, err := p.getter.GetPlaylistTracks(ctx, playlistID, maxPageSize, 0)
 	if err != nil {
 		return nil, err
+	}
+
+	if page.Total == 0 {
+		return []models.SimpleTrack{}, nil
 	}
 
 	slog.Debug("retrieving tracks for playlist", slog.Int("total", page.Total))

@@ -1,26 +1,29 @@
 package spotify
 
 import (
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/internal/providers"
+	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/internal/services"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
 
 type Client interface {
-	providers.TrackSearcher
-	creator
-	playlist
+	services.Client
 }
 
 type Commands struct {
-	SearchTracks   SearchTracksCommandHandler
-	CreatePlaylist CreatePlaylistCommandHandler
-	SyncPlaylist   SyncPlaylistCommandHandler
+	CreatePlaylist       CreatePlaylistCommandHandler
+	RandomTracksPlaylist RandomTracksPlaylistCommandHandler
+	SearchTracks         SearchTracksCommandHandler
+	SyncPlaylist         SyncPlaylistCommandHandler
 }
 
-func NewCommands(client Client, repository domain.Repository) Commands {
+func NewCommands(client services.Client, repository domain.Repository) Commands {
+	playlistService := services.NewPlaylistService(client)
+	searchService := services.NewSearchService(client)
+
 	return Commands{
-		SearchTracks:   NewSearchTracksCommand(client, repository),
-		CreatePlaylist: NewCreatePlaylistCommand(client, repository),
-		SyncPlaylist:   NewSyncPlaylistCommand(client, repository),
+		CreatePlaylist:       NewCreatePlaylistCommand(playlistService, repository),
+		RandomTracksPlaylist: NewRandomTracksPlaylistCommand(playlistService, repository),
+		SearchTracks:         NewSearchTracksCommand(searchService, repository),
+		SyncPlaylist:         NewSyncPlaylistCommand(playlistService, repository),
 	}
 }

@@ -25,6 +25,7 @@ const (
 type Client interface {
 	Get(ctx context.Context, endpoint string, options ...RequestOption) (*http.Response, error)
 	Post(ctx context.Context, endpoint string, options ...RequestOption) (*http.Response, error)
+	Delete(ctx context.Context, endpoint string, options ...RequestOption) (*http.Response, error)
 	Do(req *http.Request) (*http.Response, error)
 }
 
@@ -138,6 +139,34 @@ func (c *retryingClient) Post(ctx context.Context, endpoint string, options ...R
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, requestURL, bytes.NewBuffer(bodyJSON))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (c *retryingClient) Delete(ctx context.Context, endpoint string, options ...RequestOption) (*http.Response, error) {
+	requestURL := c.baseURL.JoinPath(endpoint).String()
+
+	cfg := &RequestConfig{}
+	for _, opt := range options {
+		opt(cfg)
+	}
+
+	bodyJSON, err := json.Marshal(cfg.jsonBody)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, requestURL, bytes.NewBuffer(bodyJSON))
 	if err != nil {
 		return nil, err
 	}

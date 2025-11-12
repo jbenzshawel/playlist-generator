@@ -117,3 +117,11 @@ type PlaylistTrackPage struct {
 	Total int            `json:"total"`
 	Items []PlaylistItem `json:"items"`
 }
+
+type RemoveItemsFromPlaylistRequest struct {
+	Tracks []RemoveTrack `json:"tracks"`
+}
+
+type RemoveTrack struct {
+	URI string `json:"uri"`
+}

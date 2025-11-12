@@ -13,10 +13,11 @@ import (
 
 func main() {
 	defaultDate := time.Now().Format(time.DateOnly)
-	modeFlag := flag.String("mode", string(app.SingleMode), "the mode the generator runs (single or recurring)")
-	dateFlag := flag.String("date", defaultDate, "the date to download songs for in YYYY-MM-DD (single mode)")
-	monthFlag := flag.String("month", "", "the month to download songs for in YYYY-MM (single mode)")
-	intervalFlag := flag.Int("interval", 60, "the interval between downloading songs for in minutes (recurring mode)")
+	actionFlag := flag.String("action", string(app.SyncDayAction), "the action the generator runs (syncDay, syncMonth, recurring, or random)")
+	dateFlag := flag.String("date", defaultDate, "the date to download songs for in YYYY-MM-DD (syncDay action)")
+	monthFlag := flag.String("month", "", "the month to download songs for in YYYY-MM (syncMonth action)")
+	intervalFlag := flag.Int("interval", 60, "the interval between downloading songs for in minutes (recurring action)")
+	numTracks := flag.Int("numTracks", 50, "the number of random tracks to include in the random tracks playlist (random action)")
 	verboseFlag := flag.Bool("verbose", false, "include detailed logs")
 
 	flag.Parse()
@@ -37,10 +38,11 @@ func main() {
 	case <-ctx.Done():
 	default:
 		application.Run(ctx, app.RunConfig{
-			Mode:     app.Mode(*modeFlag),
-			Date:     *dateFlag,
-			Month:    *monthFlag,
-			Interval: time.Duration(*intervalFlag) * time.Minute,
+			Action:    app.Action(*actionFlag),
+			Date:      *dateFlag,
+			Month:     *monthFlag,
+			Interval:  time.Duration(*intervalFlag) * time.Minute,
+			NumTracks: *numTracks,
 		})
 	}
 }

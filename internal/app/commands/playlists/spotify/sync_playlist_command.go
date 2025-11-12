@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/internal/providers"
+	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/internal/services"
 	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
 	"github.com/jbenzshawel/playlist-generator/internal/common/decorator"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
@@ -19,13 +19,12 @@ type SyncPlaylistCommand struct {
 type SyncPlaylistCommandHandler decorator.CommandHandler[SyncPlaylistCommand]
 
 func NewSyncPlaylistCommand(
-	playlist playlist,
+	playlistService services.PlaylistService,
 	repository domain.Repository,
 ) SyncPlaylistCommandHandler {
 	return decorator.ApplyDBTransactionDecorator(
 		&syncPlaylistCommandHandler{
-			provider:           providers.NewPlaylistTrackProvider(playlist),
-			playlist:           playlist,
+			playlistService:    playlistService,
 			playlistRepository: repository.Playlist(),
 			trackRepository:    repository.SpotifyTrack(),
 		},
@@ -33,18 +32,12 @@ func NewSyncPlaylistCommand(
 	)
 }
 
-type playlistTrackProvider interface {
-	GetTracks(ctx context.Context, playlistID string) ([]models.SimpleTrack, error)
-}
-
 type playlist interface {
-	GetPlaylistTracks(ctx context.Context, playlistID string, limit, offset int) (models.PlaylistTrackPage, error)
 	AddItemsToPlaylist(ctx context.Context, playlistID string, request models.AddItemsToPlaylistRequest) (string, error)
 }
 
 type syncPlaylistCommandHandler struct {
-	provider           playlistTrackProvider
-	playlist           playlist
+	playlistService    services.PlaylistService
 	playlistRepository domain.PlaylistRepository
 	trackRepository    domain.SpotifyTrackRepository
 }
@@ -78,23 +71,9 @@ func (c *syncPlaylistCommandHandler) Execute(ctx context.Context, cmd SyncPlayli
 		slog.Info("all downloaded tracks synced to playlist")
 	}
 
-	// spotify API supports adding songs with a max batch size of 100
-	limit := 100
-	for offset := 0; offset < len(trackURIs); offset += limit {
-		end := offset + limit
-
-		if end > len(trackURIs) {
-			end = len(trackURIs)
-		}
-
-		batch := trackURIs[offset:end]
-
-		_, err = c.playlist.AddItemsToPlaylist(ctx, cmd.Playlist.ID(), models.AddItemsToPlaylistRequest{
-			URIs: batch,
-		})
-		if err != nil {
-			return nil, err
-		}
+	err = c.playlistService.AddTracks(ctx, cmd.Playlist.ID(), trackURIs)
+	if err != nil {
+		return nil, err
 	}
 
 	// Set last date synced to yesterday since we want to pick up other songs from today
@@ -110,7 +89,7 @@ func (c *syncPlaylistCommandHandler) Execute(ctx context.Context, cmd SyncPlayli
 }
 
 func (c *syncPlaylistCommandHandler) getTrackURIs(ctx context.Context, p domain.Playlist, tracks []domain.SpotifyTrack) ([]string, error) {
-	playlistTracks, err := c.provider.GetTracks(ctx, p.ID())
+	playlistTracks, err := c.playlistService.GetTracks(ctx, p.ID())
 	if err != nil {
 		return nil, err
 	}

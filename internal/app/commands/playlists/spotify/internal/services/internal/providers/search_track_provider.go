@@ -23,7 +23,11 @@ type TrackSearcher interface {
 	SearchTrack(ctx context.Context, artist, track, album string) (models.SearchTrackResponse, error)
 }
 
-func NewSearchTrackProvider(s TrackSearcher) *searchTrackProvider {
+type SearchTrackProvider interface {
+	SearchTrack(ctx context.Context, song domain.Song) (domain.SpotifyTrack, error)
+}
+
+func NewSearchTrackProvider(s TrackSearcher) SearchTrackProvider {
 	return &searchTrackProvider{
 		searcher: s,
 	}

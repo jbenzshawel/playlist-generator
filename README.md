@@ -12,23 +12,25 @@ In the future additional playlist time range scopes may be added. Another idea I
 new playlist with a random number of songs played from a specific source. 
 
 ### Options
-The playlist generator currently supports two modes `single` and `recurring`. 
-
-The `single` mode in combination with the `date` option can be used to update a playlist with songs 
-played on a specific date. The `single` mode in combination with the `month` flag will create a playlist with
-all songs played from a source in the given month. 
-
-The `recurring` flag can be used to run the tool in the background to add songs played from a source in real time. For 
+The playlist generator currently supports the following actions modes `syncDay`, `syncMonth`, `recurring`, and `random`. 
+* The `syncDay` action in combination with the `date` option can be used to update a playlist with songs 
+played on a specific date. 
+* The `syncMonth` action in combination with the `month` flag will create a playlist with all songs played from a source in the given month. 
+* The `recurring` action can be used to run the tool in the background to add songs played from a source in real time. For 
 example, if the interval is set to `5` minutes the sources playlist for the current month will be updated every five 
 minutes with the most recent song(s) played. 
+* The `random` action will reset the "Random Studio One" playlist to have a random number of tracks pulled from the studio one
+source. The tool's database keeps track of all tracks downloaded from a source. 
 
-| Flag       | Default      | Description                                                                                                                                                           |
-|------------|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `mode`     | single       | The generator mode (single or recurring). In single mode the generator runs once based on parameters. In recurring mode the generator runs at the configured interval | 
-| `date`     | current date | The date to download songs for in YYYY-MM-DD. This option is only used in single mode.                                                                                |
-| `month`    |              | The month to download songs for in YYYY-MM. This option is only used in single mode.                                                                                  |
-| `interval` | 60           | The interval, in minutes, between updating the playlist. This option is only used in recurring mode                                                                   |
-| `verbose`  | false        | Whether to include detailed logs                                                                                                                                      | 
+
+| Flag       | Default      | Description                                                                                                            |
+|------------|--------------|------------------------------------------------------------------------------------------------------------------------|
+| `action`   | syncDay      | The action (see above for details)                                                                                     | 
+| `date`     | current date | The date to download songs for in YYYY-MM-DD. This option is only used with the syncDay action.                        |
+| `month`    |              | The month to download songs for in YYYY-MM. This option is only used with the syncMonth action.                        |
+| `interval` | 60           | The interval, in minutes, between updating the playlist. This option is only used with the recurring action.           |
+| `random`   | 50           | The number of random tracks to include in the random tracks playlist. This option is only used with the random action. |
+| `verbose`  | false        | Whether to include detailed logs                                                                                       | 
 
 ### Example
 The tool can be run with the following command:

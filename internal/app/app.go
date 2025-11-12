@@ -22,11 +22,13 @@ import (
 
 const dsn = "file:db/app.db?_busy_timeout=5000&_pragma=journal_mode(WAL)"
 
-type Mode string
+type Action string
 
 const (
-	SingleMode    Mode = "single"
-	RecurringMode Mode = "recurring"
+	SyncDayAction   Action = "syncDay"
+	SyncMonthAction Action = "syncMonth"
+	RecurringAction Action = "recurring"
+	RandomAction    Action = "random"
 )
 
 type Application struct {
@@ -91,6 +93,7 @@ func setupSpotifyClient(ctx context.Context, clientConfig config.OAuthClient) *s
 		Scopes: []string{
 			"playlist-read-private",
 			"playlist-modify-private",
+			"playlist-modify-public",
 		},
 	})
 
@@ -124,27 +127,31 @@ func setupSpotifyClient(ctx context.Context, clientConfig config.OAuthClient) *s
 }
 
 type RunConfig struct {
-	Mode     Mode
-	Date     string
-	Month    string
-	Interval time.Duration
+	Action    Action
+	Date      string
+	Month     string
+	Interval  time.Duration
+	NumTracks int
 }
 
 func (a Application) Run(ctx context.Context, cfg RunConfig) {
-	switch cfg.Mode {
-	case SingleMode:
-		if cfg.Month != "" {
-			a.genStudioOneSpotifyPlaylistForMonth(ctx, cfg.Month)
-		} else {
-			err := a.genStudioOneSpotifyPlaylistsForDay(ctx, cfg.Date)
-			if err != nil {
-				slog.Error("gen studio one playlist error", slog.Any("error", err), slog.String("date", cfg.Date))
-			}
+	switch cfg.Action {
+	case SyncDayAction:
+		err := a.genStudioOneSpotifyPlaylistsForDay(ctx, cfg.Date)
+		if err != nil {
+			slog.Error("gen studio one playlist error", slog.Any("error", err), slog.String("date", cfg.Date))
 		}
-	case RecurringMode:
+	case SyncMonthAction:
+		a.genStudioOneSpotifyPlaylistForMonth(ctx, cfg.Month)
+	case RecurringAction:
 		a.startRecurringJob(ctx, cfg.Interval)
+	case RandomAction:
+		err := a.randomPlaylist(ctx, cfg.NumTracks)
+		if err != nil {
+			slog.Error("update random playlist error", slog.Any("error", err))
+		}
 	default:
-		panic(fmt.Errorf("unknown mode %q", cfg.Mode))
+		panic(fmt.Errorf("unknown action %q", cfg.Action))
 	}
 
 }
@@ -227,4 +234,17 @@ func (a Application) genStudioOneSpotifyPlaylistsForDay(ctx context.Context, dat
 	}
 
 	return err
+}
+
+func (a Application) randomPlaylist(ctx context.Context, numTracks int) error {
+	slog.Info("updating random playlist with new random tracks", slog.Int("numTracks", numTracks))
+
+	_, err := a.Playlists.Spotify.RandomTracksPlaylist.Execute(ctx, spotify.RandomTracksPlaylistCommand{
+		NumTracks: numTracks,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

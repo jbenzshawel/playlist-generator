@@ -18,6 +18,9 @@ type SpotifyTrackRepository interface {
 	// GetTracksPlayedInRange returns the tracks for a source played within a date range. Start is inclusive and end date is exclusive.
 	GetTracksPlayedInRange(ctx context.Context, songSourceType SourceType, startDate, endDate string) ([]SpotifyTrack, error)
 
+	// GetRandomTracks returns a random slice of tracks with of the requested size
+	GetRandomTracks(ctx context.Context, numTracks int) ([]SpotifyTrack, error)
+
 	Insert(ctx context.Context, track SpotifyTrack) error
 }
 

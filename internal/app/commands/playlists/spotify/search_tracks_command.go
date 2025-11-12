@@ -7,7 +7,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/internal/providers"
+	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/internal/services"
 	"github.com/jbenzshawel/playlist-generator/internal/common/decorator"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
@@ -16,23 +16,19 @@ type SearchTracksCommand struct{}
 
 type SearchTracksCommandHandler decorator.CommandHandler[SearchTracksCommand]
 
-func NewSearchTracksCommand(searcher providers.TrackSearcher, repository domain.Repository) SearchTracksCommandHandler {
+func NewSearchTracksCommand(searchService services.SearchService, repository domain.Repository) SearchTracksCommandHandler {
 	return decorator.ApplyDBTransactionDecorator(
 		&searchTracksCommandHandler{
-			provider:   providers.NewSearchTrackProvider(searcher),
-			repository: repository.SpotifyTrack(),
+			searchService: searchService,
+			repository:    repository.SpotifyTrack(),
 		},
 		repository,
 	)
 }
 
-type searchProvider interface {
-	SearchTrack(ctx context.Context, song domain.Song) (domain.SpotifyTrack, error)
-}
-
 type searchTracksCommandHandler struct {
-	provider   searchProvider
-	repository domain.SpotifyTrackRepository
+	searchService services.SearchService
+	repository    domain.SpotifyTrackRepository
 }
 
 func (t *searchTracksCommandHandler) Execute(ctx context.Context, _ SearchTracksCommand) (any, error) {
@@ -63,7 +59,7 @@ func (t *searchTracksCommandHandler) Execute(ctx context.Context, _ SearchTracks
 				var err error
 				song := songs[idx]
 
-				track, err = t.provider.SearchTrack(ctx, song)
+				track, err = t.searchService.SearchTrack(ctx, song)
 				if err != nil {
 					slog.Warn("spotify track not found for song",
 						slog.Any("song", song),
