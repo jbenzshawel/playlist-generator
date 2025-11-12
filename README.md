@@ -11,7 +11,7 @@ the tool runs for multiple days in a month all songs collected from a source wil
 In the future additional playlist time range scopes may be added. 
 
 ### Options
-The playlist generator currently supports the following actions modes `syncDay`, `syncMonth`, `recurring`, and `random`. 
+The playlist generator currently supports the following actions `syncDay`, `syncMonth`, `recurring`, and `random`. 
 * The `syncDay` action in combination with the `date` option can be used to update a playlist with songs 
 played on a specific date. 
 * The `syncMonth` action in combination with the `month` flag will create a playlist with all songs played from a source in the given month. 
