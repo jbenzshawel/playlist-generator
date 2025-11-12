@@ -8,8 +8,7 @@ The tool currently scopes all playlists to songs played over a month at a given 
 the tool runs for multiple days in a month all songs collected from a source will be in a playlist called
 "Source Name YYYY-MM".
 
-In the future additional playlist time range scopes may be added. Another idea I'm considering is generating a
-new playlist with a random number of songs played from a specific source. 
+In the future additional playlist time range scopes may be added. 
 
 ### Options
 The playlist generator currently supports the following actions modes `syncDay`, `syncMonth`, `recurring`, and `random`. 
