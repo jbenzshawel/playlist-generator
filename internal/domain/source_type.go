@@ -6,11 +6,13 @@ type SourceType int
 const (
 	UnknownSourceType   SourceType = 0
 	StudioOneSourceType SourceType = 1
+	KRUISourceType      SourceType = 2
 )
 
 var sourceTypes = map[SourceType]string{
 	UnknownSourceType:   "Unknown",
 	StudioOneSourceType: "Studio One",
+	KRUISourceType:      "KRUI",
 }
 
 func (t SourceType) String() string {
@@ -29,5 +31,6 @@ func (t SourceType) IsValid() bool {
 func AllSourceTypes() []SourceType {
 	return []SourceType{
 		StudioOneSourceType,
+		KRUISourceType,
 	}
 }

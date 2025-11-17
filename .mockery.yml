@@ -6,7 +6,10 @@ force-file-write: true
 dir: "{{.InterfaceDir}}"
 filename: "mocks_test.go"
 packages:
-  github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/internal/providers:
+  github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/internal/services/internal/providers:
     interfaces:
       TrackSearcher:
-      PlaylistTrackGetter:
+      TrackGetter:
+  github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/spinitron/internal/provider:
+    interfaces:
+      songGetter:
