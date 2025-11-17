@@ -12,13 +12,18 @@ import (
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
 
-//go:embed test_song_list.html
-var testSongData []byte
+var (
+	//go:embed test_song_list.html
+	testSongData []byte
+
+	//go:embed test_song_list_prev.html
+	testPrevSongData []byte
+)
 
 func TestSongListProvider_ListSongs(t *testing.T) {
 	mockGetter := newMocksongGetter(t)
 	mockGetter.EXPECT().ScrapePlaylist("/KRUI").Return(testSongData, nil)
-	mockGetter.EXPECT().ScrapePlaylist("/KRUI/pl/21532308/89-7FM-KRUI-Iowa-City-11-15-25-8-00-AM").Return(nil, nil)
+	mockGetter.EXPECT().ScrapePlaylist("/KRUI/pl/21532308/89-7FM-KRUI-Iowa-City-11-15-25-8-00-AM").Return(testPrevSongData, nil)
 	mockGetter.EXPECT().ScrapePlaylist("/KRUI/pl/21532084/89-7FM-KRUI-Iowa-City-11-15-25-7-00-AM").Return(nil, nil)
 	mockGetter.EXPECT().ScrapePlaylist("/KRUI/pl/21531905/89-7FM-KRUI-Iowa-City-11-15-25-6-00-AM").Return(nil, nil)
 	mockGetter.EXPECT().ScrapePlaylist("/KRUI/pl/21531822/89-7FM-KRUI-Iowa-City-11-15-25-5-03-AM").Return(nil, nil)
@@ -33,12 +38,12 @@ func TestSongListProvider_ListSongs(t *testing.T) {
 	actualSong, actualSource, err := provider.ListSongs(domain.KRUISourceType)
 	require.NoError(t, err)
 
-	require.Len(t, actualSong, 5)
+	require.Len(t, actualSong, 15)
 	assert.Equal(t, "Nic Cowan", actualSong[0].Artist())
 	assert.Equal(t, "Sun Dress", actualSong[0].Track())
 	assert.Equal(t, "Hard Headed", actualSong[0].Album())
 
-	require.Len(t, actualSource, 5)
+	require.Len(t, actualSource, 15)
 	assert.Equal(t, "430646780", actualSource[0].SourceID())
 	assert.Equal(t, actualSong[0].SongHash(), actualSource[0].SongHash())
 	assert.Equal(t, domain.KRUISourceType, actualSource[0].SourceType())
