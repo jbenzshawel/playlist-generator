@@ -229,7 +229,7 @@ func (a Application) genSpotifyPlaylistsForDay(ctx context.Context, sourceType d
 		Date:       date,
 	})
 	if err != nil {
-		return fmt.Errorf("studio one download song internal error: %w", err)
+		return fmt.Errorf("%s song list error: %w", sourceType, err)
 	}
 
 	_, err = a.Playlists.Spotify.SearchTracks.Execute(ctx, spotify.SearchTracksCommand{})

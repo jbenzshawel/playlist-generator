@@ -15,7 +15,7 @@ type PlaylistCreator interface {
 }
 
 type CreatePlaylistMutator interface {
-	CreatePlaylist(ctx context.Context, name string, date time.Time) (domain.Playlist, error)
+	CreatePlaylist(ctx context.Context, name string, sourceType domain.SourceType, date time.Time) (domain.Playlist, error)
 }
 
 func NewCreatePlaylistMutator(creator PlaylistCreator) CreatePlaylistMutator {
@@ -28,7 +28,7 @@ type createPlaylistMutator struct {
 	creator PlaylistCreator
 }
 
-func (c *createPlaylistMutator) CreatePlaylist(ctx context.Context, name string, date time.Time) (domain.Playlist, error) {
+func (c *createPlaylistMutator) CreatePlaylist(ctx context.Context, name string, sourceType domain.SourceType, date time.Time) (domain.Playlist, error) {
 	u, err := c.creator.CurrentUser(ctx)
 	if err != nil {
 		return domain.Playlist{}, err
@@ -49,7 +49,7 @@ func (c *createPlaylistMutator) CreatePlaylist(ctx context.Context, name string,
 		spotifyPlaylist.Name,
 		playlistDate,
 		domain.SpotifyPlaylistType,
-		domain.StudioOneSourceType,
+		sourceType,
 	)
 
 	return p, nil

@@ -59,7 +59,7 @@ func (c *createPlaylistCommand) Execute(ctx context.Context, cmd CreatePlaylistC
 		return CreatePlaylistCommandResult{Playlist: p}, nil
 	}
 
-	p, err = c.playlistService.CreatePlaylist(ctx, fmt.Sprintf("%s %s", cmd.SourceType, playlistDate), date)
+	p, err = c.playlistService.CreatePlaylist(ctx, fmt.Sprintf("%s %s", cmd.SourceType, playlistDate), cmd.SourceType, date)
 	if err != nil {
 		return CreatePlaylistCommandResult{}, err
 	}
