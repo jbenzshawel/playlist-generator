@@ -48,7 +48,7 @@ func TestSongListProvider_ListSongs(t *testing.T) {
 	assert.Equal(t, "430646780", actualSource[0].SourceID())
 	assert.Equal(t, actualSong[0].SongHash(), actualSource[0].SongHash())
 	assert.Equal(t, domain.KRUISourceType, actualSource[0].SourceType())
-	// TODO: strip out extra spaces here...
+	// extra spacing is just in test file
 	assert.Equal(t, "89.7FM KRUI, Iowa                                    City 11/15/25, 9:01 AM", actualSource[0].ProgramName())
 	assert.Equal(t, "2025-01-01", actualSource[0].Day())
 
