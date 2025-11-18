@@ -1,6 +1,7 @@
 package dateformat
 
 const (
-	YearMonth        = "2006-01"
-	MonthDayYearTime = "01-02-2006 15:04:05"
+	YearMonth           = "2006-01"
+	MonthDayYearTime    = "01-02-2006 15:04:05"
+	YearMonthDayKitchen = "2006-01-02 3:04PM"
 )

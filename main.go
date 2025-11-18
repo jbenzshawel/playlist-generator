@@ -13,11 +13,13 @@ import (
 
 func main() {
 	defaultDate := time.Now().Format(time.DateOnly)
+
 	actionFlag := flag.String("action", string(app.SyncDayAction), "the action the generator runs (syncDay, syncMonth, recurring, or random)")
 	dateFlag := flag.String("date", defaultDate, "the date to download songs for in YYYY-MM-DD (syncDay action)")
 	monthFlag := flag.String("month", "", "the month to download songs for in YYYY-MM (syncMonth action)")
 	intervalFlag := flag.Int("interval", 60, "the interval between downloading songs for in minutes (recurring action)")
-	numTracks := flag.Int("numTracks", 50, "the number of random tracks to include in the random tracks playlist (random action)")
+	numTracksFlag := flag.Int("numTracksFlag", 50, "the number of random tracks to include in the random tracks playlist (random action)")
+	songSourceFlag := flag.String("source", "studioOne", "the source type to download songs from (studioOne, krui, or kcck)")
 	verboseFlag := flag.Bool("verbose", false, "include detailed logs")
 
 	flag.Parse()
@@ -38,11 +40,12 @@ func main() {
 	case <-ctx.Done():
 	default:
 		application.Run(ctx, app.RunConfig{
-			Action:    app.Action(*actionFlag),
-			Date:      *dateFlag,
-			Month:     *monthFlag,
-			Interval:  time.Duration(*intervalFlag) * time.Minute,
-			NumTracks: *numTracks,
+			Action:     app.Action(*actionFlag),
+			Date:       *dateFlag,
+			Month:      *monthFlag,
+			Interval:   time.Duration(*intervalFlag) * time.Minute,
+			NumTracks:  *numTracksFlag,
+			SongSource: *songSourceFlag,
 		})
 	}
 }

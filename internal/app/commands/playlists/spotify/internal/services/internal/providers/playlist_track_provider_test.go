@@ -22,7 +22,7 @@ func TestPlaylistTrackProvider_GetTracks(t *testing.T) {
 
 	testTrackPages := getTestTrackPages(total)
 
-	mockGetter := NewMockPlaylistTrackGetter(t)
+	mockGetter := NewMockTrackGetter(t)
 	for idx, page := range testTrackPages {
 		mockGetter.EXPECT().GetPlaylistTracks(mock.Anything, playlistID, maxPageSize, idx*maxPageSize).Return(page, nil)
 	}

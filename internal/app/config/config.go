@@ -12,6 +12,7 @@ type Config struct {
 type Clients struct {
 	IowaPublicRadio Client      `json:"ipr"`
 	SpotifyClient   OAuthClient `json:"spotify"`
+	Spinitron       Client      `json:"spinitron"`
 }
 
 type Client struct {
