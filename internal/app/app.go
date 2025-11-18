@@ -160,7 +160,7 @@ func (a Application) Run(ctx context.Context, cfg RunConfig) {
 	case SyncMonthAction:
 		a.genStudioOneSpotifyPlaylistForMonth(ctx, cfg.Month)
 	case RecurringAction:
-		a.startRecurringJob(ctx, sourceType, cfg.Interval)
+		a.startRecurringJob(ctx, cfg.Interval)
 	case RandomAction:
 		err := a.randomPlaylist(ctx, cfg.NumTracks)
 		if err != nil {
@@ -172,7 +172,7 @@ func (a Application) Run(ctx context.Context, cfg RunConfig) {
 
 }
 
-func (a Application) startRecurringJob(ctx context.Context, sourceType domain.SourceType, interval time.Duration) {
+func (a Application) startRecurringJob(ctx context.Context, interval time.Duration) {
 	slog.Info("starting recurring job", slog.String("interval", fmt.Sprintf("%v minutes", interval.Minutes())))
 
 	ticker := time.NewTicker(interval)
@@ -184,11 +184,18 @@ func (a Application) startRecurringJob(ctx context.Context, sourceType domain.So
 		for {
 			select {
 			case <-ticker.C:
-				date := time.Now().Format(time.DateOnly)
-				err := a.genSpotifyPlaylistsForDay(ctx, sourceType, date)
-				if err != nil {
-					slog.Error("gen studio one playlist error", slog.Any("error", err), slog.String("date", date))
+				for _, sourceType := range domain.AllSourceTypes() {
+					date := time.Now().Format(time.DateOnly)
+					err := a.genSpotifyPlaylistsForDay(ctx, sourceType, date)
+					if err != nil {
+						slog.Error("gen playlist error",
+							slog.String("sourceType", sourceType.String()),
+							slog.Any("error", err),
+							slog.String("date", date),
+						)
+					}
 				}
+
 			case <-ctx.Done():
 				slog.Info("stopping recurring job")
 				done <- true

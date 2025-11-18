@@ -38,7 +38,7 @@ type songListCommand struct {
 }
 
 func (c *songListCommand) Execute(ctx context.Context, cmd SongListCommand) (any, error) {
-	songs, pubRadioSongs, err := c.provider.ListSongs(ctx, cmd.Date)
+	songs, sources, err := c.provider.ListSongs(ctx, cmd.Date)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (c *songListCommand) Execute(ctx context.Context, cmd SongListCommand) (any
 		return nil, err
 	}
 
-	err = c.sourceRepository.BulkInsert(ctx, pubRadioSongs)
+	err = c.sourceRepository.BulkInsert(ctx, sources)
 	if err != nil {
 		return nil, err
 	}
