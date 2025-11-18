@@ -11,7 +11,6 @@ import (
 	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists"
 	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify"
 	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources"
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/list"
 	"github.com/jbenzshawel/playlist-generator/internal/app/config"
 	"github.com/jbenzshawel/playlist-generator/internal/common/dateformat"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
@@ -225,9 +224,12 @@ func (a Application) genStudioOneSpotifyPlaylistForMonth(ctx context.Context, mo
 func (a Application) genSpotifyPlaylistsForDay(ctx context.Context, sourceType domain.SourceType, date string) error {
 	slog.Info("adding songs from Studio One to Spotify playlist", slog.String("date", date))
 
-	err := a.listSongs(ctx, sourceType, date)
+	_, err := a.commands.Sources.ListSongs.Execute(ctx, sources.SourceSongListCommand{
+		SourceType: sourceType,
+		Date:       date,
+	})
 	if err != nil {
-		return fmt.Errorf("studio one download song list error: %w", err)
+		return fmt.Errorf("studio one download song internal error: %w", err)
 	}
 
 	_, err = a.Playlists.Spotify.SearchTracks.Execute(ctx, spotify.SearchTracksCommand{})
@@ -236,49 +238,23 @@ func (a Application) genSpotifyPlaylistsForDay(ctx context.Context, sourceType d
 	}
 
 	createRes, err := a.Playlists.Spotify.CreatePlaylist.Execute(ctx, spotify.CreatePlaylistCommand{
-		Date: date,
+		Date:       date,
+		SourceType: sourceType,
 	})
 	if err != nil {
 		return fmt.Errorf("create spotify playlist error: %w", err)
 	}
 
 	_, err = a.Playlists.Spotify.SyncPlaylist.Execute(ctx, spotify.SyncPlaylistCommand{
-		Playlist: createRes.Playlist,
-		Date:     date,
+		Playlist:   createRes.Playlist,
+		SourceType: sourceType,
+		Date:       date,
 	})
 	if err != nil {
 		return fmt.Errorf("sync spotify playlist error: %w", err)
 	}
 
 	return err
-}
-
-func (a Application) listSongs(ctx context.Context, sourceType domain.SourceType, date string) error {
-	// TODO: This may become a a command, but might add an "All Sources" option which
-	// might be easier to manage here
-
-	switch sourceType {
-	case domain.StudioOneSourceType:
-		_, err := a.Sources.StudioOne.ListSongs.Execute(ctx, list.SongListCommand{Date: date})
-		if err != nil {
-			return err
-		}
-		return nil
-	case domain.KRUISourceType:
-		_, err := a.Sources.KRUI.ListSongs.Execute(ctx, list.SongListCommand{Date: date})
-		if err != nil {
-			return err
-		}
-		return nil
-	case domain.KCCKSourceType:
-		_, err := a.Sources.KCCK.ListSongs.Execute(ctx, list.SongListCommand{Date: date})
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-
-	return nil
 }
 
 func (a Application) randomPlaylist(ctx context.Context, numTracks int) error {

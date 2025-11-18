@@ -3,28 +3,22 @@ package spinitron
 import (
 	"context"
 
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/list"
+	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/internal"
 	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/spinitron/internal/providers"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
-
-type Commands struct {
-	ListSongs list.SongListCommandHandler
-}
 
 type Client interface {
 	providers.SongGetter
 }
 
-func NewCommands(client Client, sourceType domain.SourceType, repository domain.Repository) Commands {
+func NewListSongsCommand(client Client, sourceType domain.SourceType, repository domain.Repository) internal.SongListCommandHandler {
 	p := &sourceProvider{
 		source:   sourceType,
 		provider: providers.NewSongProvider(client),
 	}
 
-	return Commands{
-		ListSongs: list.NewSongListCommand(p, repository),
-	}
+	return internal.NewSongListCommand(p, repository)
 }
 
 type provider interface {
