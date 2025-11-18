@@ -14,7 +14,8 @@ In the future additional playlist time range scopes may be added.
 The playlist generator currently supports the following actions modes `syncDay`, `syncMonth`, `recurring`, and `random`. 
 * The `syncDay` action in combination with the `date` option can be used to update a playlist with songs 
 played on a specific date. 
-* The `syncMonth` action in combination with the `month` flag will create a playlist with all songs played from a source in the given month. 
+* The `syncMonth` action in combination with the `month` flag will create a playlist with all songs played from a source in the given month.
+Note this action is only supported with the studioOne `source`.
 * The `recurring` action can be used to run the tool in the background to add songs played from a source in real time. For 
 example, if the interval is set to `5` minutes the sources playlist for the current month will be updated every five 
 minutes with the most recent song(s) played. 
@@ -29,6 +30,7 @@ source. The tool's database keeps track of all tracks downloaded from a source.
 | `month`    |              | The month to download songs for in YYYY-MM. This option is only used with the syncMonth action.                        |
 | `interval` | 60           | The interval, in minutes, between updating the playlist. This option is only used with the recurring action.           |
 | `random`   | 50           | The number of random tracks to include in the random tracks playlist. This option is only used with the random action. |
+| `source`   | studioOne    | The source to download songs from (studioOne, krui, or kcck)                                                           | 
 | `verbose`  | false        | Whether to include detailed logs                                                                                       | 
 
 ### Example
@@ -45,9 +47,9 @@ that can be used to authenticate with your Spotify account.
 ### Sources
 Sources represent a source that provides a list of songs played. 
 
-The only supported source is currently IPR Studio One, however I  plan on adding 
-support for MPR The Current if I can find a source to download a daily list of songs
-played on that station. 
+The supported sources currently include IPR Studio One, KRUI Iowa City, and KCCK Jazz.
+I plan on also adding support for MPR The Current if I can find a source to download a daily 
+list of songs played on that station. 
 
 ### Playlists
 Playlists represent where the playlist is created. Spotify is currently the only supported 
