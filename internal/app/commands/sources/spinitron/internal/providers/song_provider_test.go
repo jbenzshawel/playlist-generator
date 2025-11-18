@@ -1,4 +1,4 @@
-package provider
+package providers
 
 import (
 	_ "embed"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/jbenzshawel/playlist-generator/internal/common/dateformat"
@@ -21,21 +22,21 @@ var (
 )
 
 func TestSongListProvider_ListSongs(t *testing.T) {
-	mockGetter := newMocksongGetter(t)
-	mockGetter.EXPECT().ScrapePlaylist("/KRUI").Return(testSongData, nil)
-	mockGetter.EXPECT().ScrapePlaylist("/KRUI/pl/21532308/89-7FM-KRUI-Iowa-City-11-15-25-8-00-AM").Return(testPrevSongData, nil)
-	mockGetter.EXPECT().ScrapePlaylist("/KRUI/pl/21532084/89-7FM-KRUI-Iowa-City-11-15-25-7-00-AM").Return(nil, nil)
-	mockGetter.EXPECT().ScrapePlaylist("/KRUI/pl/21531905/89-7FM-KRUI-Iowa-City-11-15-25-6-00-AM").Return(nil, nil)
-	mockGetter.EXPECT().ScrapePlaylist("/KRUI/pl/21531822/89-7FM-KRUI-Iowa-City-11-15-25-5-03-AM").Return(nil, nil)
-	mockGetter.EXPECT().ScrapePlaylist("/KRUI/pl/21531600/89-7FM-KRUI-Iowa-City-11-15-25-4-01-AM").Return(nil, nil)
+	mockGetter := NewMockSongGetter(t)
+	mockGetter.EXPECT().ScrapePlaylist(mock.Anything, "/KRUI").Return(testSongData, nil)
+	mockGetter.EXPECT().ScrapePlaylist(mock.Anything, "/KRUI/pl/21532308/89-7FM-KRUI-Iowa-City-11-15-25-8-00-AM").Return(testPrevSongData, nil)
+	mockGetter.EXPECT().ScrapePlaylist(mock.Anything, "/KRUI/pl/21532084/89-7FM-KRUI-Iowa-City-11-15-25-7-00-AM").Return(nil, nil)
+	mockGetter.EXPECT().ScrapePlaylist(mock.Anything, "/KRUI/pl/21531905/89-7FM-KRUI-Iowa-City-11-15-25-6-00-AM").Return(nil, nil)
+	mockGetter.EXPECT().ScrapePlaylist(mock.Anything, "/KRUI/pl/21531822/89-7FM-KRUI-Iowa-City-11-15-25-5-03-AM").Return(nil, nil)
+	mockGetter.EXPECT().ScrapePlaylist(mock.Anything, "/KRUI/pl/21531600/89-7FM-KRUI-Iowa-City-11-15-25-4-01-AM").Return(nil, nil)
 
 	today = "2025-01-01"
 
-	provider := &songListProvider{
+	provider := &songProvider{
 		getter: mockGetter,
 	}
 
-	actualSong, actualSource, err := provider.ListSongs(domain.KRUISourceType)
+	actualSong, actualSource, err := provider.ListSongs(t.Context(), domain.KRUISourceType)
 	require.NoError(t, err)
 
 	require.Len(t, actualSong, 15)

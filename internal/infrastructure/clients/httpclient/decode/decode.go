@@ -31,3 +31,20 @@ func JSON[T any](resp *http.Response) (T, error) {
 
 	return zero, fmt.Errorf("http request failed with %d status", resp.StatusCode)
 }
+
+func Bytes(resp *http.Response) ([]byte, error) {
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response body: %w", err)
+	}
+
+	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		return bodyBytes, nil
+	}
+
+	if resp.StatusCode >= 400 {
+		slog.Warn("http request failed with error", "error", string(bodyBytes), "status", resp.StatusCode)
+	}
+
+	return nil, fmt.Errorf("http request failed with %d status", resp.StatusCode)
+}

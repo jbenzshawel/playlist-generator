@@ -224,7 +224,7 @@ func (c *retryingClient) Do(req *http.Request) (*http.Response, error) {
 		}
 
 		if resp.StatusCode >= http.StatusInternalServerError && resp.StatusCode != http.StatusNotImplemented {
-			slog.Warn("http request failed with internal server error",
+			slog.Warn("http request failed with list server error",
 				slog.Int("attempt", attempt),
 				slog.Int("wait", int(wait)),
 			)

@@ -1,7 +1,8 @@
-package provider
+package providers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -26,22 +27,28 @@ var (
 	errPlayTimeParseFailed = errors.New("playtime parse failed")
 )
 
-type songGetter interface {
-	ScrapePlaylist(source string) ([]byte, error)
+type SongGetter interface {
+	ScrapePlaylist(ctx context.Context, source string) ([]byte, error)
 }
 
-type songListProvider struct {
-	getter songGetter
+func NewSongProvider(getter SongGetter) *songProvider {
+	return &songProvider{
+		getter: getter,
+	}
 }
 
-func (s *songListProvider) ListSongs(sourceType domain.SourceType) ([]domain.Song, []domain.SongSource, error) {
-	result, err := s.scrapePlaylist(fmt.Sprintf("/%s", sourceType), sourceType)
+type songProvider struct {
+	getter SongGetter
+}
+
+func (s *songProvider) ListSongs(ctx context.Context, sourceType domain.SourceType) ([]domain.Song, []domain.SongSource, error) {
+	result, err := s.scrapePlaylist(ctx, fmt.Sprintf("/%s", sourceType), sourceType)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	for _, prev := range result.previous {
-		prevRes, err := s.scrapePlaylist(prev, sourceType)
+		prevRes, err := s.scrapePlaylist(ctx, prev, sourceType)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -52,8 +59,8 @@ func (s *songListProvider) ListSongs(sourceType domain.SourceType) ([]domain.Son
 	return result.songs, result.sources, nil
 }
 
-func (s *songListProvider) scrapePlaylist(source string, sourceType domain.SourceType) (parseResult, error) {
-	raw, err := s.getter.ScrapePlaylist(source)
+func (s *songProvider) scrapePlaylist(ctx context.Context, source string, sourceType domain.SourceType) (parseResult, error) {
+	raw, err := s.getter.ScrapePlaylist(ctx, source)
 	if err != nil {
 		return parseResult{}, err
 	}
@@ -232,7 +239,7 @@ func parseRecentPlaylists(n *html.Node) []string {
 
 	results := make([]string, 0, len(tableRows))
 	for _, row := range tableRows {
-		// next link is in thrid column
+		// next link is in third column
 		var cols []*html.Node
 		td := row.FirstChild
 		for td != nil {

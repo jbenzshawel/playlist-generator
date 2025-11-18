@@ -1,4 +1,4 @@
-package studioone
+package providers
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 
 	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/studioone/models"
 	"github.com/jbenzshawel/playlist-generator/internal/common/dateformat"
-	"github.com/jbenzshawel/playlist-generator/internal/common/decorator"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 )
 
@@ -24,41 +23,26 @@ var supportedPrograms = map[string]struct{}{
 	"World Cafe":            {},
 }
 
-type SongListCommand struct {
-	Date string
-}
-
-type SongListCommandHandler decorator.CommandHandler[SongListCommand]
-
-func NewSongListCommand(
-	provider songGetter,
-	repository domain.Repository,
-) SongListCommandHandler {
-	return decorator.ApplyDBTransactionDecorator(
-		&songListCommand{
-			queryer:          provider,
-			songRepository:   repository.Song(),
-			sourceRepository: repository.SongSource(),
-		},
-		repository,
-	)
-}
-
-type songGetter interface {
+type SongGetter interface {
 	GetSongs(ctx context.Context, date string) (models.Collection, error)
 }
 
-type songListCommand struct {
-	queryer          songGetter
-	songRepository   domain.SongRepository
-	sourceRepository domain.SongSourceRepository
+func NewSongProvider(getter SongGetter) *songProvider {
+	return &songProvider{
+		getter: getter,
+	}
 }
 
-func (d *songListCommand) Execute(ctx context.Context, cmd SongListCommand) (any, error) {
-	slog.Info("downloading studio one songs", slog.Any("date", cmd.Date))
-	collection, err := d.queryer.GetSongs(ctx, cmd.Date)
+type songProvider struct {
+	getter SongGetter
+}
+
+func (s *songProvider) ListSongs(ctx context.Context, date string) ([]domain.Song, []domain.SongSource, error) {
+	slog.Info("downloading studio one songs", slog.Any("date", date))
+
+	collection, err := s.getter.GetSongs(ctx, date)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var songs []domain.Song
@@ -88,7 +72,7 @@ func (d *songListCommand) Execute(ctx context.Context, cmd SongListCommand) (any
 				slog.Warn("song skipped", slog.Any("invalidEndTime", s.EndTime))
 				continue
 			}
-			pubRadio := domain.NewSongSource(s.ID, song.SongHash(), domain.StudioOneSourceType, programName, cmd.Date, parsedTime)
+			pubRadio := domain.NewSongSource(s.ID, song.SongHash(), domain.StudioOneSourceType, programName, date, parsedTime)
 
 			pubRadioSongs = append(pubRadioSongs, pubRadio)
 		}
@@ -96,17 +80,7 @@ func (d *songListCommand) Execute(ctx context.Context, cmd SongListCommand) (any
 
 	slog.Info("found songs", slog.Int("count", len(songs)))
 
-	err = d.songRepository.BulkInsert(ctx, songs)
-	if err != nil {
-		return nil, err
-	}
-
-	err = d.sourceRepository.BulkInsert(ctx, pubRadioSongs)
-	if err != nil {
-		return nil, err
-	}
-
-	return nil, nil
+	return songs, pubRadioSongs, nil
 }
 
 func tryParseTime(t string) (time.Time, bool) {

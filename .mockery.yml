@@ -10,6 +10,6 @@ packages:
     interfaces:
       TrackSearcher:
       TrackGetter:
-  github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/spinitron/internal/provider:
+  github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/spinitron/internal/providers:
     interfaces:
-      songGetter:
+      SongGetter:

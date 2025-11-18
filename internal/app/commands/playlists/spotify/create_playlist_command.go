@@ -13,7 +13,8 @@ import (
 )
 
 type CreatePlaylistCommand struct {
-	Date string
+	Date   string
+	Source domain.SourceType
 }
 
 type CreatePlaylistCommandResult struct {
@@ -48,7 +49,7 @@ func (c *createPlaylistCommand) Execute(ctx context.Context, cmd CreatePlaylistC
 
 	playlistDate := date.Format(dateformat.YearMonth)
 
-	p, err := c.playlistRepository.GetPlaylistByDate(ctx, domain.SpotifyPlaylistType, playlistDate)
+	p, err := c.playlistRepository.GetPlaylistByDate(ctx, cmd.Source, domain.SpotifyPlaylistType, playlistDate)
 	if err != nil {
 		return CreatePlaylistCommandResult{}, err
 	}
@@ -58,7 +59,7 @@ func (c *createPlaylistCommand) Execute(ctx context.Context, cmd CreatePlaylistC
 		return CreatePlaylistCommandResult{Playlist: p}, nil
 	}
 
-	p, err = c.playlistService.CreatePlaylist(ctx, fmt.Sprintf("Studio One %s", playlistDate), date)
+	p, err = c.playlistService.CreatePlaylist(ctx, fmt.Sprintf("%s %s", cmd.Source, playlistDate), date)
 	if err != nil {
 		return CreatePlaylistCommandResult{}, err
 	}

@@ -11,10 +11,12 @@ import (
 	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists"
 	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify"
 	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources"
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/studioone"
+	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/list"
 	"github.com/jbenzshawel/playlist-generator/internal/app/config"
 	"github.com/jbenzshawel/playlist-generator/internal/common/dateformat"
+	"github.com/jbenzshawel/playlist-generator/internal/domain"
 	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient/oauth"
+	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/spinitronclient"
 	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/spotifyclient"
 	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/studiooneclient"
 	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/storage"
@@ -75,9 +77,18 @@ func NewApplication(ctx context.Context) (Application, func()) {
 		BaseURL: iprBaseURL,
 	})
 
+	spinBaseURL, err := url.Parse(cfg.Spinitron.BaseURL)
+	if err != nil {
+		panic(fmt.Errorf("failed to parse Spinitron.BaseURL: %w", err))
+	}
+
+	spinClient := spinitronclient.New(spinitronclient.Config{
+		BaseURL: spinBaseURL,
+	})
+
 	return Application{
 		commands: commands{
-			Sources:   sources.NewCommands(iprClient, repository),
+			Sources:   sources.NewCommands(iprClient, spinClient, repository),
 			Playlists: playlists.NewCommands(spotifyClient, repository),
 		},
 	}, closer
@@ -127,24 +138,30 @@ func setupSpotifyClient(ctx context.Context, clientConfig config.OAuthClient) *s
 }
 
 type RunConfig struct {
-	Action    Action
-	Date      string
-	Month     string
-	Interval  time.Duration
-	NumTracks int
+	Action     Action
+	Date       string
+	Month      string
+	Interval   time.Duration
+	NumTracks  int
+	SongSource string
 }
 
 func (a Application) Run(ctx context.Context, cfg RunConfig) {
+	sourceType := domain.ParseSourceType(cfg.SongSource)
+	if sourceType == domain.UnknownSourceType {
+		panic(fmt.Errorf("unknown source type: %s", cfg.SongSource))
+	}
+
 	switch cfg.Action {
 	case SyncDayAction:
-		err := a.genStudioOneSpotifyPlaylistsForDay(ctx, cfg.Date)
+		err := a.genSpotifyPlaylistsForDay(ctx, sourceType, cfg.Date)
 		if err != nil {
 			slog.Error("gen studio one playlist error", slog.Any("error", err), slog.String("date", cfg.Date))
 		}
 	case SyncMonthAction:
 		a.genStudioOneSpotifyPlaylistForMonth(ctx, cfg.Month)
 	case RecurringAction:
-		a.startRecurringJob(ctx, cfg.Interval)
+		a.startRecurringJob(ctx, sourceType, cfg.Interval)
 	case RandomAction:
 		err := a.randomPlaylist(ctx, cfg.NumTracks)
 		if err != nil {
@@ -156,7 +173,7 @@ func (a Application) Run(ctx context.Context, cfg RunConfig) {
 
 }
 
-func (a Application) startRecurringJob(ctx context.Context, interval time.Duration) {
+func (a Application) startRecurringJob(ctx context.Context, sourceType domain.SourceType, interval time.Duration) {
 	slog.Info("starting recurring job", slog.String("interval", fmt.Sprintf("%v minutes", interval.Minutes())))
 
 	ticker := time.NewTicker(interval)
@@ -169,7 +186,7 @@ func (a Application) startRecurringJob(ctx context.Context, interval time.Durati
 			select {
 			case <-ticker.C:
 				date := time.Now().Format(time.DateOnly)
-				err := a.genStudioOneSpotifyPlaylistsForDay(ctx, date)
+				err := a.genSpotifyPlaylistsForDay(ctx, sourceType, date)
 				if err != nil {
 					slog.Error("gen studio one playlist error", slog.Any("error", err), slog.String("date", date))
 				}
@@ -196,7 +213,7 @@ func (a Application) genStudioOneSpotifyPlaylistForMonth(ctx context.Context, mo
 		case <-ctx.Done():
 		default:
 			day := date.Format(time.DateOnly)
-			err = a.genStudioOneSpotifyPlaylistsForDay(ctx, day)
+			err = a.genSpotifyPlaylistsForDay(ctx, domain.StudioOneSourceType, day)
 			if err != nil {
 				slog.Error("gen studio one playlist error", slog.Any("error", err), slog.String("date", day))
 			}
@@ -205,10 +222,10 @@ func (a Application) genStudioOneSpotifyPlaylistForMonth(ctx context.Context, mo
 	}
 }
 
-func (a Application) genStudioOneSpotifyPlaylistsForDay(ctx context.Context, date string) error {
+func (a Application) genSpotifyPlaylistsForDay(ctx context.Context, sourceType domain.SourceType, date string) error {
 	slog.Info("adding songs from Studio One to Spotify playlist", slog.String("date", date))
 
-	_, err := a.Sources.StudioOne.ListSongs.Execute(ctx, studioone.SongListCommand{Date: date})
+	err := a.listSongs(ctx, sourceType, date)
 	if err != nil {
 		return fmt.Errorf("studio one download song list error: %w", err)
 	}
@@ -234,6 +251,34 @@ func (a Application) genStudioOneSpotifyPlaylistsForDay(ctx context.Context, dat
 	}
 
 	return err
+}
+
+func (a Application) listSongs(ctx context.Context, sourceType domain.SourceType, date string) error {
+	// TODO: This may become a a command, but might add an "All Sources" option which
+	// might be easier to manage here
+
+	switch sourceType {
+	case domain.StudioOneSourceType:
+		_, err := a.Sources.StudioOne.ListSongs.Execute(ctx, list.SongListCommand{Date: date})
+		if err != nil {
+			return err
+		}
+		return nil
+	case domain.KRUISourceType:
+		_, err := a.Sources.KRUI.ListSongs.Execute(ctx, list.SongListCommand{Date: date})
+		if err != nil {
+			return err
+		}
+		return nil
+	case domain.KCCKSourceType:
+		_, err := a.Sources.KCCK.ListSongs.Execute(ctx, list.SongListCommand{Date: date})
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	return nil
 }
 
 func (a Application) randomPlaylist(ctx context.Context, numTracks int) error {

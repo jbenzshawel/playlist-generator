@@ -42,10 +42,10 @@ func (r *playlistSqlRepository) GetPlaylistByID(ctx context.Context, id string) 
 	return p, nil
 }
 
-func (r *playlistSqlRepository) GetPlaylistByDate(ctx context.Context, playlistType domain.PlaylistType, date string) (domain.Playlist, error) {
+func (r *playlistSqlRepository) GetPlaylistByDate(ctx context.Context, sourceType domain.SourceType, playlistType domain.PlaylistType, date string) (domain.Playlist, error) {
 	row := r.tx.QueryRowContext(ctx, `SELECT id, uri, name, date, source_type_id, playlist_type_id, last_day_synced, created
-		FROM playlists WHERE playlist_type_id = ? AND date = ?`,
-		playlistType, date,
+		FROM playlists WHERE playlist_type_id = ? AND date = ? AND source_type_id = ?`,
+		playlistType, date, sourceType,
 	)
 
 	p, err := scanPlaylistRow(row)

@@ -1,17 +1,21 @@
 package studioone
 
-import "github.com/jbenzshawel/playlist-generator/internal/domain"
+import (
+	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/list"
+	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/studioone/internal/providers"
+	"github.com/jbenzshawel/playlist-generator/internal/domain"
+)
 
 type Commands struct {
-	ListSongs SongListCommandHandler
+	ListSongs list.SongListCommandHandler
 }
 
 type Client interface {
-	songGetter
+	providers.SongGetter
 }
 
 func NewCommands(client Client, repository domain.Repository) Commands {
 	return Commands{
-		ListSongs: NewSongListCommand(client, repository),
+		ListSongs: list.NewSongListCommand(providers.NewSongProvider(client), repository),
 	}
 }

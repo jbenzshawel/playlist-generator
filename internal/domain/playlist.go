@@ -13,7 +13,7 @@ type PlaylistRepository interface {
 	GetPlaylistByID(ctx context.Context, id string) (Playlist, error)
 	// GetPlaylistByDate returns a playlist that matches a type and date. Note playlists could
 	// eventually be scoped to month, day, or year so date is intentionally a string. Follow YYYY-MM-DD convention.
-	GetPlaylistByDate(ctx context.Context, playlistType PlaylistType, date string) (Playlist, error)
+	GetPlaylistByDate(ctx context.Context, sourceType SourceType, playlistType PlaylistType, date string) (Playlist, error)
 
 	Insert(ctx context.Context, playlist Playlist) error
 	SetLastDaySynced(ctx context.Context, id, lastDaySynced string) error

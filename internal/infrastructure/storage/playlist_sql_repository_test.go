@@ -61,11 +61,11 @@ func TestPlaylistSqlRepository(t *testing.T) {
 
 	t.Run("get playlist by date", func(t *testing.T) {
 		// Playlist 1 and 2 have same date so newest should be returned (playlist 1)
-		playlist1, err := r.GetPlaylistByDate(t.Context(), domain.SpotifyPlaylistType, expectedPlaylists[0].Date())
+		playlist1, err := r.GetPlaylistByDate(t.Context(), domain.StudioOneSourceType, domain.SpotifyPlaylistType, expectedPlaylists[0].Date())
 		require.NoError(t, err)
 		assert.Equal(t, expectedPlaylists[0], playlist1)
 
-		playlist3, err := r.GetPlaylistByDate(t.Context(), domain.SpotifyPlaylistType, expectedPlaylists[2].Date())
+		playlist3, err := r.GetPlaylistByDate(t.Context(), domain.StudioOneSourceType, domain.SpotifyPlaylistType, expectedPlaylists[2].Date())
 		require.NoError(t, err)
 		assert.Equal(t, expectedPlaylists[2], playlist3)
 	})
