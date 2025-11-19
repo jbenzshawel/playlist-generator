@@ -165,10 +165,10 @@ type spin struct {
 func parseSong(n *html.Node) (domain.Song, string, error) {
 	var dataSpin, dataKey string
 	for _, attr := range n.Attr {
-		if attr.Key == "data-spin" {
+		switch attr.Key {
+		case "data-spin":
 			dataSpin = html.UnescapeString(attr.Val)
-		}
-		if attr.Key == "data-key" {
+		case "date-key":
 			dataKey = attr.Val
 		}
 	}
