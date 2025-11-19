@@ -229,7 +229,10 @@ func (a Application) genStudioOneSpotifyPlaylistForMonth(ctx context.Context, mo
 }
 
 func (a Application) genSpotifyPlaylistsForDay(ctx context.Context, sourceType domain.SourceType, date string) error {
-	slog.Info("adding songs from Studio One to Spotify playlist", slog.String("date", date))
+	slog.Info("adding songs to Spotify playlist",
+		slog.String("date", date),
+		slog.String("source", sourceType.String()),
+	)
 
 	_, err := a.commands.Sources.ListSongs.Execute(ctx, sources.SourceSongListCommand{
 		SourceType: sourceType,
