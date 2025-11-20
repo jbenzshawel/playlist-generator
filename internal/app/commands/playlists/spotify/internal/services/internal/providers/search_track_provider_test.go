@@ -2,13 +2,17 @@ package providers
 
 import (
 	"context"
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/oauth2/clientcredentials"
 
 	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
+	"github.com/jbenzshawel/playlist-generator/internal/app/config"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
+	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/spotifyclient"
 )
 
 func TestSearchTrackProvider_SearchTrack(t *testing.T) {
@@ -252,4 +256,44 @@ func TestSearchTrackProvider_SearchTrack(t *testing.T) {
 			assert.Equal(t, tc.expectedTrack, actualTrack)
 		})
 	}
+}
+
+func TestSearchTrackProvider_SearchTrack_Integration(t *testing.T) {
+	// This test actualy calls the sptofiy API and is used to troubleshoot cases
+	// where a match isn't found
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	const (
+		artist = "Declan Mckenna"
+		track  = "Twice Your Size"
+		album  = "Zeros"
+	)
+
+	appConfig := config.LoadForTest(t)
+
+	oauthConfig := clientcredentials.Config{
+		ClientID:     appConfig.SpotifyClient.ClientID,
+		ClientSecret: appConfig.SpotifyClient.ClientSecret,
+		TokenURL:     appConfig.SpotifyClient.TokenURL,
+	}
+
+	baseURL, err := url.Parse(appConfig.SpotifyClient.BaseURL)
+	require.NoError(t, err)
+
+	spotifyClient := spotifyclient.New(spotifyclient.Config{
+		BaseURL: baseURL,
+		Client:  oauthConfig.Client(t.Context()),
+	})
+
+	provider := searchTrackProvider{
+		searcher: spotifyClient,
+	}
+
+	s, err := domain.NewSong(artist, track, album, "")
+	require.NoError(t, err)
+
+	_, err = provider.SearchTrack(t.Context(), s)
+	require.NoError(t, err)
 }

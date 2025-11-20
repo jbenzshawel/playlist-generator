@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
 	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient"
@@ -39,9 +40,14 @@ func (c *Client) SearchTrack(ctx context.Context, artist, track, album string) (
 		query += fmt.Sprintf(" album:%s", album)
 	}
 
+	// the spotify api expects spaces to be escaped with "%20", but QueryEscape uses "+"
+	escapedQuery := strings.ReplaceAll(url.QueryEscape(query), "+", "%20")
+
 	resp, err := c.Get(ctx, "/search", httpclient.WithQuery(map[string]string{
-		"q":    url.QueryEscape(query),
-		"type": "track",
+		"q":      escapedQuery,
+		"type":   "track",
+		"limit":  "50", // default is 20 and max is 50
+		"offset": "0",
 	}))
 	if err != nil {
 		return models.SearchTrackResponse{}, err

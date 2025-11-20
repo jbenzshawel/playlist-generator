@@ -168,7 +168,7 @@ func parseSong(n *html.Node) (domain.Song, string, error) {
 		switch attr.Key {
 		case "data-spin":
 			dataSpin = html.UnescapeString(attr.Val)
-		case "date-key":
+		case "data-key":
 			dataKey = attr.Val
 		}
 	}

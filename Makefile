@@ -11,7 +11,7 @@ build: # build: Compile the application binary
 
 .PHONY: test
 test: # test: Runs all tests in the project
-	@GOEXPERIMENT=synctest go test -race -v ./...
+	@GOEXPERIMENT=synctest go test -short -race -v ./...
 
 
 .PHONY: fmt
