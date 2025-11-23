@@ -27,9 +27,18 @@ func NewCommands(studioOne studioOneClient, spinClient spinitronClient, reposito
 	return Commands{
 		ListSongs: &songListCommand{
 			commands: map[domain.SourceType]internal.SongListCommandHandler{
-				domain.StudioOneSourceType: studioone.NewListSongsCommand(studioOne, repository),
-				domain.KRUISourceType:      spinitron.NewListSongsCommand(spinClient, domain.KRUISourceType, repository),
-				domain.KCCKSourceType:      spinitron.NewListSongsCommand(spinClient, domain.KCCKSourceType, repository),
+				domain.StudioOneSourceType:        studioone.NewListSongsCommand(studioOne, repository),
+				domain.KRUISourceType:             spinitron.NewListSongsCommand(spinClient, domain.KRUISourceType, repository),
+				domain.KCCKSourceType:             spinitron.NewListSongsCommand(spinClient, domain.KCCKSourceType, repository),
+				domain.KBEMSourceType:             spinitron.NewListSongsCommand(spinClient, domain.KBEMSourceType, repository),
+				domain.KCSMSourceType:             spinitron.NewListSongsCommand(spinClient, domain.KCSMSourceType, repository),
+				domain.EastVillageRadioSourceType: spinitron.NewListSongsCommand(spinClient, domain.EastVillageRadioSourceType, repository),
+				domain.WKCRSourceType:             spinitron.NewListSongsCommand(spinClient, domain.WKCRSourceType, repository),
+				domain.WDCBSourceType:             spinitron.NewListSongsCommand(spinClient, domain.WDCBSourceType, repository),
+				domain.KUVOSourceType:             spinitron.NewListSongsCommand(spinClient, domain.KUVOSourceType, repository),
+				domain.WSUMSourceType:             spinitron.NewListSongsCommand(spinClient, domain.WSUMSourceType, repository),
+				domain.KZSCSourceType:             spinitron.NewListSongsCommand(spinClient, domain.KZSCSourceType, repository),
+				domain.KSPCSourceType:             spinitron.NewListSongsCommand(spinClient, domain.KSPCSourceType, repository),
 			},
 		},
 	}

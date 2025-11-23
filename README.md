@@ -47,7 +47,20 @@ that can be used to authenticate with your Spotify account.
 ### Sources
 Sources represent a source that provides a list of songs played. 
 
-The supported sources currently include IPR Studio One, KRUI Iowa City, and KCCK Jazz.
+The supported sources currently include the following radio stations:
+* IPR Studio One
+* KRUI University of Iowa college radio  
+* KCCK Eastern Iowa's Jazz Station
+* KBEM Minnesota's Jazz Station
+* KCSM The Bay Area's Jazz Station 
+* East Village Radio
+* WKCR Columbia's college radio 
+* WDCB Chicago's Jazz Station  
+* KUVO Colorado's Jazz Station 
+* WSUM UW Madison college radio  
+* KZSC US Santa Cruz college radio
+* KSPC College Radio in LA (Claremont College radio)
+
 I plan on also adding support for MPR The Current if I can find a source to download a daily 
 list of songs played on that station. 
 
