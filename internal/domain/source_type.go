@@ -40,7 +40,7 @@ var sourceTypes = map[SourceType]string{
 	KCCKSourceType:             "KCCK",
 	KBEMSourceType:             "KBEM",
 	KCSMSourceType:             "KCSM",
-	EastVillageRadioSourceType: "East Village Radio",
+	EastVillageRadioSourceType: "EastVillageRadio",
 	WKCRSourceType:             "WKCR",
 	WDCBSourceType:             "WDCB",
 	KUVOSourceType:             "KUVO",
