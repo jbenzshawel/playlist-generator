@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
-	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/storage/internal/statements"
+	"github.com/jbenzshawel/playlist-generator/internal/storage/internal/statements"
 )
 
 var _ domain.SongRepository = (*songSqlRepository)(nil)

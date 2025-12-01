@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/jbenzshawel/playlist-generator/internal/httpclient/ratelimit"
 	"log/slog"
 	"math"
 	"math/rand/v2"
@@ -12,8 +13,6 @@ import (
 	"net/url"
 	"strconv"
 	"time"
-
-	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient/internal/ratelimit"
 )
 
 const (
@@ -29,7 +28,7 @@ type Client interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-type retryingClient struct {
+type client struct {
 	client  *http.Client
 	baseURL *url.URL
 
@@ -53,9 +52,9 @@ type Config struct {
 	LimitBatchSize int
 }
 
-// NewRetryingClient creates a retryingClient with default settings.
-func NewRetryingClient(cfg Config) *retryingClient {
-	c := &retryingClient{
+// NewClient creates a client with default settings
+func NewClient(cfg Config) *client {
+	c := &client{
 		baseURL:     cfg.BaseURL,
 		maxRetries:  defaultMaxRetries,
 		minWaitTime: defaultMinWaitTime,
@@ -96,7 +95,7 @@ func WithJSONBody(b any) RequestOption {
 	}
 }
 
-func (c *retryingClient) Get(ctx context.Context, endpoint string, options ...RequestOption) (*http.Response, error) {
+func (c *client) Get(ctx context.Context, endpoint string, options ...RequestOption) (*http.Response, error) {
 	requestURL := c.baseURL.JoinPath(endpoint).String()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL, nil)
@@ -125,7 +124,7 @@ func (c *retryingClient) Get(ctx context.Context, endpoint string, options ...Re
 	return resp, nil
 }
 
-func (c *retryingClient) Post(ctx context.Context, endpoint string, options ...RequestOption) (*http.Response, error) {
+func (c *client) Post(ctx context.Context, endpoint string, options ...RequestOption) (*http.Response, error) {
 	requestURL := c.baseURL.JoinPath(endpoint).String()
 
 	cfg := &RequestConfig{}
@@ -153,7 +152,7 @@ func (c *retryingClient) Post(ctx context.Context, endpoint string, options ...R
 	return resp, nil
 }
 
-func (c *retryingClient) Delete(ctx context.Context, endpoint string, options ...RequestOption) (*http.Response, error) {
+func (c *client) Delete(ctx context.Context, endpoint string, options ...RequestOption) (*http.Response, error) {
 	requestURL := c.baseURL.JoinPath(endpoint).String()
 
 	cfg := &RequestConfig{}
@@ -181,7 +180,7 @@ func (c *retryingClient) Delete(ctx context.Context, endpoint string, options ..
 	return resp, nil
 }
 
-func (c *retryingClient) Do(req *http.Request) (*http.Response, error) {
+func (c *client) Do(req *http.Request) (*http.Response, error) {
 	for attempt := 0; attempt < c.maxRetries; attempt++ {
 		if c.rateLimit.Limited() {
 			// if the circuit is open due to being rate limited
@@ -238,7 +237,7 @@ func (c *retryingClient) Do(req *http.Request) (*http.Response, error) {
 	return nil, fmt.Errorf("http request failed after max retries %d", c.maxRetries)
 }
 
-func (c *retryingClient) defaultWaitStrategy(attempt int) time.Duration {
+func (c *client) defaultWaitStrategy(attempt int) time.Duration {
 	wait := math.Min(float64(c.maxWaitTime), float64(c.minWaitTime)*math.Exp2(float64(attempt)))
 	center := time.Duration(wait / 2)
 
@@ -247,7 +246,7 @@ func (c *retryingClient) defaultWaitStrategy(attempt int) time.Duration {
 	return time.Duration(math.Abs(float64(interval + jitter)))
 }
 
-func (c *retryingClient) sleep(ctx context.Context, d time.Duration, isRateLimited bool) {
+func (c *client) sleep(ctx context.Context, d time.Duration, isRateLimited bool) {
 	if isRateLimited {
 		c.rateLimit.SetLimited(d)
 	}

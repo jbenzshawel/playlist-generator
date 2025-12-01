@@ -2,11 +2,11 @@ package studiooneclient
 
 import (
 	"context"
+	"github.com/jbenzshawel/playlist-generator/internal/app/sources/studioone/models"
 	"net/url"
 
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/studioone/models"
-	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient"
-	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient/decode"
+	"github.com/jbenzshawel/playlist-generator/internal/httpclient"
+	"github.com/jbenzshawel/playlist-generator/internal/httpclient/decode"
 )
 
 type Config struct {
@@ -19,7 +19,7 @@ type client struct {
 
 func New(cfg Config) *client {
 	return &client{
-		Client: httpclient.NewRetryingClient(httpclient.Config{
+		Client: httpclient.NewClient(httpclient.Config{
 			BaseURL: cfg.BaseURL,
 		}),
 	}

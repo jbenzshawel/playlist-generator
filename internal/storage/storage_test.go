@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
-	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/storage/internal/statements"
+	"github.com/jbenzshawel/playlist-generator/internal/storage/internal/statements"
 )
 
 func TestStorage(t *testing.T) {

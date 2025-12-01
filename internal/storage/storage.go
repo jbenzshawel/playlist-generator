@@ -8,7 +8,7 @@ import (
 
 	_ "modernc.org/sqlite"
 
-	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/storage/internal/statements"
+	"github.com/jbenzshawel/playlist-generator/internal/storage/internal/statements"
 )
 
 var tableSchemas = []string{

@@ -2,6 +2,7 @@ package httpclient
 
 import (
 	"context"
+	"github.com/jbenzshawel/playlist-generator/internal/httpclient/ratelimit"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -13,8 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
-
-	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient/internal/ratelimit"
 )
 
 func TestRetryingClient_Do_RateLimited(t *testing.T) {
@@ -50,7 +49,7 @@ func TestRetryingClient_Do_RateLimited(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	rc := NewRetryingClient(Config{})
+	rc := NewClient(Config{})
 
 	g, gCtx := errgroup.WithContext(t.Context())
 
@@ -113,7 +112,7 @@ func TestRetryingClient_Do_ClientLimiter_RateLimited(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	rc := NewRetryingClient(Config{
+	rc := NewClient(Config{
 		LimitNumRequests: 5,
 		LimitWindow:      batchSize,
 	})
@@ -166,7 +165,7 @@ func TestRetryingClient_Do_ClientLimiter(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	rc := NewRetryingClient(Config{
+	rc := NewClient(Config{
 		LimitNumRequests: maxRequests,
 		LimitWindow:      windowSize,
 		LimitBatchSize:   batchSize,

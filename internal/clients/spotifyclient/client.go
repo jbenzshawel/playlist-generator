@@ -3,14 +3,14 @@ package spotifyclient
 import (
 	"context"
 	"fmt"
+	"github.com/jbenzshawel/playlist-generator/internal/app/playlists/spotify/internal/models"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
-	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient"
-	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/httpclient/decode"
+	"github.com/jbenzshawel/playlist-generator/internal/httpclient"
+	"github.com/jbenzshawel/playlist-generator/internal/httpclient/decode"
 )
 
 type Config struct {
@@ -24,7 +24,7 @@ type Client struct {
 
 func New(cfg Config) *Client {
 	return &Client{
-		Client: httpclient.NewRetryingClient(httpclient.Config{
+		Client: httpclient.NewClient(httpclient.Config{
 			BaseURL:          cfg.BaseURL,
 			Client:           cfg.Client,
 			LimitWindow:      30,
