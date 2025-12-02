@@ -11,19 +11,11 @@ import (
 	"github.com/jbenzshawel/playlist-generator/internal/sources/studioone"
 )
 
-type studioOneClient interface {
-	studioone.Client
-}
-
-type spinitronClient interface {
-	spinitron.Client
-}
-
 type Commands struct {
 	ListSongs SongListCommandHandler
 }
 
-func NewCommands(studioOne studioOneClient, spinClient spinitronClient, repository domain.Repository) Commands {
+func NewCommands(studioOne studioone.Client, spinClient spinitron.Client, repository domain.Repository) Commands {
 	return Commands{
 		ListSongs: &songListCommand{
 			commands: map[domain.SourceType]internal.SongListCommandHandler{
