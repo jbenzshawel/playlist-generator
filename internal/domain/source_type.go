@@ -27,26 +27,29 @@ const (
 	KUVOSourceType = 9
 	// WSUMSourceType is Wisconsin Madison's college radio station
 	WSUMSourceType = 10
-	// KZSCSourceType is US Santa Cruz's college radio station
+	// KZSCSourceType is UC Santa Cruz's college radio station
 	KZSCSourceType = 11
 	// KSPCSourceType is Claremont's college radio station
 	KSPCSourceType = 12
 )
 
-var sourceTypes = map[SourceType]string{
-	UnknownSourceType:          "Unknown",
-	StudioOneSourceType:        "Studio One",
-	KRUISourceType:             "KRUI",
-	KCCKSourceType:             "KCCK",
-	KBEMSourceType:             "KBEM",
-	KCSMSourceType:             "KCSM",
-	EastVillageRadioSourceType: "EastVillageRadio",
-	WKCRSourceType:             "WKCR",
-	WDCBSourceType:             "WDCB",
-	KUVOSourceType:             "KUVO",
-	WSUMSourceType:             "WSUM",
-	KZSCSourceType:             "KZSC",
-	KSPCSourceType:             "KSPC",
+var sourceTypes = map[SourceType]struct {
+	name        string
+	description string
+}{
+	UnknownSourceType:          {name: "Unknown"},
+	StudioOneSourceType:        {name: "Studio One", description: "Iowa Public Radio music's station"},
+	KRUISourceType:             {name: "KRUI", description: "University of Iowa college radio"},
+	KCCKSourceType:             {name: "KCCK", description: "Eastern Iowa's Jazz Station"},
+	KBEMSourceType:             {name: "KBEM", description: "Minnesota's Jazz Station"},
+	KCSMSourceType:             {name: "KCSM", description: "The Bay Area's Jazz Station"},
+	EastVillageRadioSourceType: {name: "EastVillageRadio", description: "East Village Manhattan"},
+	WKCRSourceType:             {name: "WKCR", description: "Columbia University college radio"},
+	WDCBSourceType:             {name: "WDCB", description: "Chicago's Jazz Station"},
+	KUVOSourceType:             {name: "KUVO", description: "Denver's Jazz Station"},
+	WSUMSourceType:             {name: "WSUM", description: "University of Wisconsin Madison college radio"},
+	KZSCSourceType:             {name: "KZSC", description: "UC Santa Cruz college radio"},
+	KSPCSourceType:             {name: "KSPC", description: "Claremont (LA) college radio"},
 }
 
 func (t SourceType) String() string {
@@ -54,12 +57,20 @@ func (t SourceType) String() string {
 	if !ok {
 		return "Unknown"
 	}
-	return s
+	return s.name
 }
 
 func (t SourceType) IsValid() bool {
 	_, ok := sourceTypes[t]
 	return ok
+}
+
+func (t SourceType) Description() string {
+	s, ok := sourceTypes[t]
+	if !ok {
+		return "Unknown"
+	}
+	return s.description
 }
 
 func AllSourceTypes() []SourceType {
@@ -82,8 +93,8 @@ func AllSourceTypes() []SourceType {
 func ParseSourceType(s string) SourceType {
 	s = strings.ToLower(s)
 	for k, v := range sourceTypes {
-		v = strings.ToLower(strings.ReplaceAll(v, " ", ""))
-		if s == v {
+		name := strings.ToLower(strings.ReplaceAll(v.name, " ", ""))
+		if s == name {
 			return k
 		}
 	}

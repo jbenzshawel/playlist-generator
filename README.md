@@ -54,11 +54,11 @@ The supported sources currently include the following radio stations:
 * KBEM Minnesota's Jazz Station
 * KCSM The Bay Area's Jazz Station 
 * East Village Radio
-* WKCR Columbia's college radio 
+* WKCR Columbia college radio 
 * WDCB Chicago's Jazz Station  
 * KUVO Colorado's Jazz Station 
 * WSUM UW Madison college radio  
-* KZSC US Santa Cruz college radio
+* KZSC UC Santa Cruz college radio
 * KSPC College Radio in LA (Claremont College radio)
 
 I plan on also adding support for MPR The Current if I can find a source to download a daily 

@@ -37,7 +37,8 @@ func (c *createPlaylistMutator) CreatePlaylist(ctx context.Context, name string,
 	playlistDate := date.Format(dateformat.YearMonth)
 
 	spotifyPlaylist, err := c.creator.CreatePlaylist(ctx, u.ID, models.CreatePlaylistRequest{
-		Name: name,
+		Name:        name,
+		Description: sourceType.Description(),
 	})
 	if err != nil {
 		return domain.Playlist{}, err
