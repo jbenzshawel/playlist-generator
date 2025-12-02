@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
 	"github.com/jbenzshawel/playlist-generator/internal/common/dateformat"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
+	"github.com/jbenzshawel/playlist-generator/internal/playlists/models"
 )
 
 type PlaylistCreator interface {

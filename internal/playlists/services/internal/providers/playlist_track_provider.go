@@ -6,7 +6,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
+	"github.com/jbenzshawel/playlist-generator/internal/playlists/models"
 )
 
 const maxPageSize = 50

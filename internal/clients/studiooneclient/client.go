@@ -2,11 +2,11 @@ package studiooneclient
 
 import (
 	"context"
-	"github.com/jbenzshawel/playlist-generator/internal/app/sources/studioone/models"
 	"net/url"
 
 	"github.com/jbenzshawel/playlist-generator/internal/httpclient"
 	"github.com/jbenzshawel/playlist-generator/internal/httpclient/decode"
+	"github.com/jbenzshawel/playlist-generator/internal/sources/studioone/models"
 )
 
 type Config struct {

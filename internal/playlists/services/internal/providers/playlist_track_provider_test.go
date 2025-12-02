@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
+	"github.com/jbenzshawel/playlist-generator/internal/playlists/models"
 )
 
 func TestPlaylistTrackProvider_GetTracks(t *testing.T) {

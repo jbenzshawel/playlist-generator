@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2/clientcredentials"
 
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
 	"github.com/jbenzshawel/playlist-generator/internal/app/config"
+	"github.com/jbenzshawel/playlist-generator/internal/clients/spotifyclient"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
-	"github.com/jbenzshawel/playlist-generator/internal/infrastructure/clients/spotifyclient"
+	"github.com/jbenzshawel/playlist-generator/internal/playlists/models"
 )
 
 func TestSearchTrackProvider_SearchTrack(t *testing.T) {

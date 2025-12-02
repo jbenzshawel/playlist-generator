@@ -3,7 +3,6 @@ package spotifyclient
 import (
 	"context"
 	"fmt"
-	"github.com/jbenzshawel/playlist-generator/internal/app/playlists/spotify/internal/models"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/jbenzshawel/playlist-generator/internal/httpclient"
 	"github.com/jbenzshawel/playlist-generator/internal/httpclient/decode"
+	"github.com/jbenzshawel/playlist-generator/internal/playlists/models"
 )
 
 type Config struct {

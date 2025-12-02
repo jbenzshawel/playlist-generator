@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/studioone/models"
 	"github.com/jbenzshawel/playlist-generator/internal/common/dateformat"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
+	"github.com/jbenzshawel/playlist-generator/internal/sources/studioone/models"
 )
 
 var supportedPrograms = map[string]struct{}{

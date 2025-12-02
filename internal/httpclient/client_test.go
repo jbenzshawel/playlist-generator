@@ -2,7 +2,6 @@ package httpclient
 
 import (
 	"context"
-	"github.com/jbenzshawel/playlist-generator/internal/httpclient/ratelimit"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -14,6 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/jbenzshawel/playlist-generator/internal/httpclient/ratelimit"
 )
 
 func TestRetryingClient_Do_RateLimited(t *testing.T) {

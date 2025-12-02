@@ -7,9 +7,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
 	"github.com/jbenzshawel/playlist-generator/internal/common/compare"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
+	"github.com/jbenzshawel/playlist-generator/internal/playlists/models"
 )
 
 const minMatchPercent = 70.0

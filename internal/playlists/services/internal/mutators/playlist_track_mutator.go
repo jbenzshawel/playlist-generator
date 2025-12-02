@@ -3,7 +3,7 @@ package mutators
 import (
 	"context"
 
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
+	"github.com/jbenzshawel/playlist-generator/internal/playlists/models"
 )
 
 // spotify API supports adding/removing tracks with a max batch size of 100

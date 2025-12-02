@@ -1,13 +1,9 @@
-package spotify
+package playlists
 
 import (
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/internal/services"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
+	"github.com/jbenzshawel/playlist-generator/internal/playlists/services"
 )
-
-type Client interface {
-	services.Client
-}
 
 type Commands struct {
 	CreatePlaylist       CreatePlaylistCommandHandler

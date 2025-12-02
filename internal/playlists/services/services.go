@@ -1,8 +1,8 @@
 package services
 
 import (
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/internal/services/internal/mutators"
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/internal/services/internal/providers"
+	"github.com/jbenzshawel/playlist-generator/internal/playlists/services/internal/mutators"
+	"github.com/jbenzshawel/playlist-generator/internal/playlists/services/internal/providers"
 )
 
 type Client interface {

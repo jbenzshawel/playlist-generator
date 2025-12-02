@@ -3,9 +3,9 @@ package spinitron
 import (
 	"context"
 
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/internal"
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/spinitron/internal/providers"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
+	"github.com/jbenzshawel/playlist-generator/internal/sources/internal"
+	"github.com/jbenzshawel/playlist-generator/internal/sources/spinitron/internal/providers"
 )
 
 type Client interface {

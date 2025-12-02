@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/internal"
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/spinitron"
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/sources/studioone"
 	"github.com/jbenzshawel/playlist-generator/internal/common/decorator"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
+	"github.com/jbenzshawel/playlist-generator/internal/sources/internal"
+	"github.com/jbenzshawel/playlist-generator/internal/sources/spinitron"
+	"github.com/jbenzshawel/playlist-generator/internal/sources/studioone"
 )
 
 type studioOneClient interface {

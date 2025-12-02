@@ -1,14 +1,14 @@
-package spotify
+package playlists
 
 import (
 	"context"
 	"log/slog"
 	"time"
 
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/internal/services"
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
 	"github.com/jbenzshawel/playlist-generator/internal/common/decorator"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
+	"github.com/jbenzshawel/playlist-generator/internal/playlists/models"
+	"github.com/jbenzshawel/playlist-generator/internal/playlists/services"
 )
 
 type SyncPlaylistCommand struct {

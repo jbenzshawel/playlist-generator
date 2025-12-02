@@ -9,7 +9,7 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
-	"github.com/jbenzshawel/playlist-generator/internal/app/commands/playlists/spotify/models"
+	"github.com/jbenzshawel/playlist-generator/internal/playlists/models"
 )
 
 // NewMockTrackGetter creates a new instance of MockTrackGetter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

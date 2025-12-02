@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/jbenzshawel/playlist-generator/internal/httpclient/ratelimit"
 	"log/slog"
 	"math"
 	"math/rand/v2"
@@ -13,6 +12,8 @@ import (
 	"net/url"
 	"strconv"
 	"time"
+
+	"github.com/jbenzshawel/playlist-generator/internal/httpclient/ratelimit"
 )
 
 const (
