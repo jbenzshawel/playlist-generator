@@ -24,10 +24,10 @@ const dsn = "file:db/app.db?_busy_timeout=5000&_pragma=journal_mode(WAL)"
 type Action string
 
 const (
-	SyncDayAction   Action = "syncDayAction"
-	SyncMonthAction Action = "syncMonthAction"
-	RecurringAction Action = "recurringAction"
-	RandomAction    Action = "randomAction"
+	SyncDayAction   Action = "syncDay"
+	SyncMonthAction Action = "syncMonth"
+	RecurringAction Action = "recurring"
+	RandomAction    Action = "random"
 )
 
 type Application struct {
@@ -138,14 +138,15 @@ type RunConfig struct {
 }
 
 func (a Application) Run(ctx context.Context, cfg RunConfig) {
-	sourceType := domain.ParseSourceType(cfg.SongSource)
-	if sourceType == domain.UnknownSourceType {
-		panic(fmt.Errorf("unknown source type: %s", cfg.SongSource))
-	}
-
-	sourceTypes := []domain.SourceType{sourceType}
+	var sourceTypes []domain.SourceType
 	if cfg.SongSource == "" {
 		sourceTypes = domain.AllSourceTypes()
+	} else {
+		sourceType := domain.ParseSourceType(cfg.SongSource)
+		if sourceType == domain.UnknownSourceType {
+			panic(fmt.Errorf("unknown source type: %s", cfg.SongSource))
+		}
+		sourceTypes = []domain.SourceType{sourceType}
 	}
 
 	switch cfg.Action {
