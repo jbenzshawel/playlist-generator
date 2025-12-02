@@ -18,7 +18,7 @@ func main() {
 	dateFlag := flag.String("date", defaultDate, "the date to download songs for in YYYY-MM-DD (syncDay action)")
 	monthFlag := flag.String("month", "", "the month to download songs for in YYYY-MM (syncMonth action)")
 	intervalFlag := flag.Int("interval", 60, "the interval between downloading songs for in minutes (recurring action)")
-	numTracksFlag := flag.Int("numTracksFlag", 50, "the number of random tracks to include in the random tracks playlist (random action)")
+	numTracksFlag := flag.Int("numTracks", 50, "the number of random tracks to include in the random tracks playlist (random action)")
 	songSourceFlag := flag.String("source", "", "the source type to download songs from. If none specified all sources will be synced")
 	verboseFlag := flag.Bool("verbose", false, "include detailed logs")
 
