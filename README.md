@@ -30,7 +30,7 @@ source. The tool's database keeps track of all tracks downloaded from a source.
 | `month`    |              | The month to download songs for in YYYY-MM. This option is only used with the syncMonth action.                        |
 | `interval` | 60           | The interval, in minutes, between updating the playlist. This option is only used with the recurring action.           |
 | `random`   | 50           | The number of random tracks to include in the random tracks playlist. This option is only used with the random action. |
-| `source`   | studioOne    | The source to download songs from (studioOne, krui, or kcck)                                                           | 
+| `source`   |              | The source to download songs from. If none specified all sources will be synced.                                       | 
 | `verbose`  | false        | Whether to include detailed logs                                                                                       | 
 
 ### Example
