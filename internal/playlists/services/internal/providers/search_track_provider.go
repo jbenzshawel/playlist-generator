@@ -12,7 +12,7 @@ import (
 	"github.com/jbenzshawel/playlist-generator/internal/playlists/models"
 )
 
-const minMatchPercent = 70.0
+const minMatchPercent = 75.0
 
 var (
 	errTrackNotFound       = errors.New("track not found")

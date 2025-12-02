@@ -187,10 +187,10 @@ func TestSearchTrackProvider_SearchTrack(t *testing.T) {
 							},
 							Artists: []models.Artist{
 								{
-									Name: "cak",
+									Name: "cake",
 								},
 							},
-							Name: "Never There",
+							Name: "Never Ther",
 							ID:   trackID,
 							URI:  uri,
 						},
