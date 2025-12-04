@@ -202,7 +202,7 @@ func (a Application) Run(ctx context.Context, cfg RunConfig) {
 }
 
 func (a Application) sourcesResults(results []syncDayResult) {
-	pterm.Println("\n" + pterm.LightCyan("Sync for all sources complete. Summary of tracks added:"))
+	a.output.Println("\n" + pterm.LightCyan("Sync for all sources complete. Summary of tracks added:"))
 
 	var tableData [][]string
 	header := []string{"Playlist name", "Description", "Tracks Added", "Total Tracks"}

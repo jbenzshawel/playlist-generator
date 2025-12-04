@@ -22,6 +22,10 @@ func New(mode Mode) Output {
 	return Output{mode: mode}
 }
 
+func (o Output) Println(message string) {
+	pterm.Println(message)
+}
+
 func (o Output) Section(message string, args ...interface{}) {
 	if o.mode == MachineMode {
 		return
