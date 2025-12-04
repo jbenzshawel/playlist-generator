@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/pterm/pterm"
@@ -158,11 +159,16 @@ func (a Application) Run(ctx context.Context, cfg RunConfig) {
 
 	switch cfg.Action {
 	case SyncDayAction:
+		var results []syncDayResult
 		for _, st := range sourceTypes {
-			err := a.syncDayAction(ctx, st, cfg.Date)
+			res, err := a.syncDayAction(ctx, st, cfg.Date)
 			if err != nil {
 				slog.Error("sync day error", slog.Any("error", err), slog.String("date", cfg.Date))
 			}
+			results = append(results, res)
+		}
+		if len(results) > 0 {
+			a.sourcesResults(results)
 		}
 	case SyncMonthAction:
 		a.syncMonthAction(ctx, cfg.Month)
@@ -176,4 +182,23 @@ func (a Application) Run(ctx context.Context, cfg RunConfig) {
 	default:
 		panic(fmt.Errorf("unknown action %q", cfg.Action))
 	}
+}
+
+func (a Application) sourcesResults(results []syncDayResult) {
+	pterm.Success.Println("Sync for all sources complete!")
+
+	var tableData [][]string
+	header := []string{"Playlist name", "Description", "Tracks Added", "Total Tracks"}
+
+	tableData = append(tableData, header)
+	for _, r := range results {
+		tableData = append(tableData, []string{
+			r.PlaylistName,
+			r.SourceType.Description(),
+			strconv.Itoa(r.TracksAdded),
+			strconv.Itoa(r.TotalTracks),
+		})
+	}
+
+	a.outputTable(tableData)
 }

@@ -22,7 +22,7 @@ func (a Application) syncMonthAction(ctx context.Context, month string) {
 		case <-ctx.Done():
 		default:
 			day := date.Format(time.DateOnly)
-			err = a.syncDayAction(ctx, domain.StudioOneSourceType, day)
+			_, err = a.syncDayAction(ctx, domain.StudioOneSourceType, day)
 			if err != nil {
 				slog.Error("gen studio one playlist error", slog.Any("error", err), slog.String("date", day))
 			}

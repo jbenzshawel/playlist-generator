@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/pterm/pterm"
 )
@@ -43,10 +44,21 @@ func (a Application) outputCreateProgressBar() func(message string, total int) f
 			return func() {}
 		}
 
-		p, _ := pterm.DefaultProgressbar.WithTotal(total).WithTitle(message).Start()
+		p, err := pterm.DefaultProgressbar.WithTotal(total).WithTitle(message).Start()
+		if err != nil {
+			slog.Error("error creating progress bar", slog.Any("error", err))
+			return func() {}
+		}
 
 		return func() {
 			p.Increment()
 		}
+	}
+}
+
+func (a Application) outputTable(tableData [][]string) {
+	err := pterm.DefaultTable.WithHasHeader().WithBoxed().WithData(tableData).Render()
+	if err != nil {
+		slog.Error("error rendering table", slog.Any("error", err))
 	}
 }

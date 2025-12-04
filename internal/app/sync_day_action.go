@@ -10,7 +10,14 @@ import (
 	"github.com/jbenzshawel/playlist-generator/internal/sources"
 )
 
-func (a Application) syncDayAction(ctx context.Context, sourceType domain.SourceType, date string) error {
+type syncDayResult struct {
+	SourceType   domain.SourceType
+	PlaylistName string
+	TotalTracks  int
+	TracksAdded  int
+}
+
+func (a Application) syncDayAction(ctx context.Context, sourceType domain.SourceType, date string) (syncDayResult, error) {
 	slog.Info("adding songs to Spotify playlist",
 		slog.String("date", date),
 		slog.String("source", sourceType.String()),
@@ -23,7 +30,7 @@ func (a Application) syncDayAction(ctx context.Context, sourceType domain.Source
 		Date:       date,
 	})
 	if err != nil {
-		return fmt.Errorf("%s song list error: %w", sourceType, err)
+		return syncDayResult{}, fmt.Errorf("%s song list error: %w", sourceType, err)
 	}
 
 	a.outputInfo("%d songs found", listRes.FoundCount)
@@ -34,7 +41,7 @@ func (a Application) syncDayAction(ctx context.Context, sourceType domain.Source
 		Progress: progressBar,
 	})
 	if err != nil {
-		return fmt.Errorf("spotify track update error: %w", err)
+		return syncDayResult{}, fmt.Errorf("spotify track update error: %w", err)
 	}
 
 	a.outputInfo("%d matches found on spotify (%d new songs searched)", searchRes.MatchedCount, searchRes.UnknownCount)
@@ -44,7 +51,7 @@ func (a Application) syncDayAction(ctx context.Context, sourceType domain.Source
 		SourceType: sourceType,
 	})
 	if err != nil {
-		return fmt.Errorf("create spotify playlist error: %w", err)
+		return syncDayResult{}, fmt.Errorf("create spotify playlist error: %w", err)
 	}
 
 	a.outputInfo("%s playlist retrieved", createRes.Playlist.Name())
@@ -55,12 +62,17 @@ func (a Application) syncDayAction(ctx context.Context, sourceType domain.Source
 		Date:       date,
 	})
 	if err != nil {
-		return fmt.Errorf("sync spotify playlist error: %w", err)
+		return syncDayResult{}, fmt.Errorf("sync spotify playlist error: %w", err)
 	}
 
 	a.outputInfo("%d new tracks added", syncRes.NewTracks)
 
 	a.outputSuccess("%s sync complete!", sourceType.String())
 
-	return nil
+	return syncDayResult{
+		SourceType:   sourceType,
+		PlaylistName: createRes.Playlist.Name(),
+		TotalTracks:  syncRes.TotalTracks,
+		TracksAdded:  syncRes.NewTracks,
+	}, nil
 }

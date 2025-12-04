@@ -23,7 +23,7 @@ func (a Application) recurringAction(ctx context.Context, interval time.Duration
 			case <-ticker.C:
 				for _, sourceType := range domain.AllSourceTypes() {
 					date := time.Now().Format(time.DateOnly)
-					err := a.syncDayAction(ctx, sourceType, date)
+					_, err := a.syncDayAction(ctx, sourceType, date)
 					if err != nil {
 						slog.Error("gen playlist error",
 							slog.String("sourceType", sourceType.String()),
