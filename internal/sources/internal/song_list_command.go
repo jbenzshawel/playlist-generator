@@ -11,7 +11,11 @@ type SongListCommand struct {
 	Date string
 }
 
-type SongListCommandHandler decorator.CommandHandler[SongListCommand]
+type SongListCommandResult struct {
+	FoundCount int
+}
+
+type SongListCommandHandler decorator.CommandWithResultHandler[SongListCommand, SongListCommandResult]
 
 func NewSongListCommand(
 	provider provider,
@@ -37,21 +41,21 @@ type songListCommand struct {
 	sourceRepository domain.SongSourceRepository
 }
 
-func (c *songListCommand) Execute(ctx context.Context, cmd SongListCommand) (any, error) {
+func (c *songListCommand) Execute(ctx context.Context, cmd SongListCommand) (SongListCommandResult, error) {
 	songs, sources, err := c.provider.ListSongs(ctx, cmd.Date)
 	if err != nil {
-		return nil, err
+		return SongListCommandResult{}, err
 	}
 
 	err = c.songRepository.BulkInsert(ctx, songs)
 	if err != nil {
-		return nil, err
+		return SongListCommandResult{}, err
 	}
 
 	err = c.sourceRepository.BulkInsert(ctx, sources)
 	if err != nil {
-		return nil, err
+		return SongListCommandResult{}, err
 	}
 
-	return nil, nil
+	return SongListCommandResult{FoundCount: len(songs)}, nil
 }

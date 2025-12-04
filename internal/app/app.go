@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/pterm/pterm"
+
 	"github.com/jbenzshawel/playlist-generator/internal/app/config"
 	"github.com/jbenzshawel/playlist-generator/internal/clients/spinitronclient"
 	"github.com/jbenzshawel/playlist-generator/internal/clients/spotifyclient"
@@ -33,9 +35,11 @@ const (
 type Application struct {
 	Sources   sources.Commands
 	Playlists playlists.Commands
+
+	outputMode OutputMode
 }
 
-func NewApplication(ctx context.Context) (Application, func()) {
+func NewApplication(ctx context.Context, outputMode OutputMode) (Application, func()) {
 	cfg, err := config.Load()
 	if err != nil {
 		panic(fmt.Errorf("failed to load config: %w", err))
@@ -80,8 +84,9 @@ func NewApplication(ctx context.Context) (Application, func()) {
 	})
 
 	return Application{
-		Sources:   sources.NewCommands(iprClient, spinClient, repository),
-		Playlists: playlists.NewCommands(spotifyClient, repository),
+		Sources:    sources.NewCommands(iprClient, spinClient, repository),
+		Playlists:  playlists.NewCommands(spotifyClient, repository),
+		outputMode: outputMode,
 	}, closer
 }
 
@@ -109,7 +114,8 @@ func setupSpotifyClient(ctx context.Context, clientConfig config.OAuthClient) *s
 
 	http.HandleFunc("/callback", completeAuthHandler)
 
-	fmt.Printf("Click the following URL to complete spotify login: %s\n", loginURL)
+	pterm.DefaultBasicText.Println("Click the following URL to complete spotify login:")
+	pterm.DefaultBasicText.Println(loginURL)
 
 	select {
 	case <-ctx.Done():
@@ -129,12 +135,13 @@ func setupSpotifyClient(ctx context.Context, clientConfig config.OAuthClient) *s
 }
 
 type RunConfig struct {
-	Action     Action
-	Date       string
-	Month      string
-	Interval   time.Duration
-	NumTracks  int
-	SongSource string
+	Action      Action
+	Date        string
+	Month       string
+	Interval    time.Duration
+	NumTracks   int
+	SongSource  string
+	HumanOutput bool
 }
 
 func (a Application) Run(ctx context.Context, cfg RunConfig) {

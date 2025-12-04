@@ -16,7 +16,9 @@ func (a Application) syncDayAction(ctx context.Context, sourceType domain.Source
 		slog.String("source", sourceType.String()),
 	)
 
-	_, err := a.Sources.ListSongs.Execute(ctx, sources.SourceSongListCommand{
+	a.outputSection("Updating %s (%s) playlist for songs played on %s:", sourceType.String(), sourceType.Description(), date)
+
+	listRes, err := a.Sources.ListSongs.Execute(ctx, sources.SourceSongListCommand{
 		SourceType: sourceType,
 		Date:       date,
 	})
@@ -24,10 +26,18 @@ func (a Application) syncDayAction(ctx context.Context, sourceType domain.Source
 		return fmt.Errorf("%s song list error: %w", sourceType, err)
 	}
 
-	_, err = a.Playlists.SearchTracks.Execute(ctx, playlists.SearchTracksCommand{})
+	a.outputInfo("%d songs found", listRes.FoundCount)
+
+	progressBar := a.outputCreateProgressBar()
+
+	searchRes, err := a.Playlists.SearchTracks.Execute(ctx, playlists.SearchTracksCommand{
+		Progress: progressBar,
+	})
 	if err != nil {
 		return fmt.Errorf("spotify track update error: %w", err)
 	}
+
+	a.outputInfo("%d matches found on spotify (%d new songs searched)", searchRes.MatchedCount, searchRes.UnknownCount)
 
 	createRes, err := a.Playlists.CreatePlaylist.Execute(ctx, playlists.CreatePlaylistCommand{
 		Date:       date,
@@ -37,7 +47,9 @@ func (a Application) syncDayAction(ctx context.Context, sourceType domain.Source
 		return fmt.Errorf("create spotify playlist error: %w", err)
 	}
 
-	_, err = a.Playlists.SyncPlaylist.Execute(ctx, playlists.SyncPlaylistCommand{
+	a.outputInfo("%s playlist retrieved", createRes.Playlist.Name())
+
+	syncRes, err := a.Playlists.SyncPlaylist.Execute(ctx, playlists.SyncPlaylistCommand{
 		Playlist:   createRes.Playlist,
 		SourceType: sourceType,
 		Date:       date,
@@ -46,5 +58,9 @@ func (a Application) syncDayAction(ctx context.Context, sourceType domain.Source
 		return fmt.Errorf("sync spotify playlist error: %w", err)
 	}
 
-	return err
+	a.outputInfo("%d new tracks added", syncRes.NewTracks)
+
+	a.outputSuccess("%s sync complete!", sourceType.String())
+
+	return nil
 }

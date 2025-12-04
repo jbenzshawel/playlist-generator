@@ -8,6 +8,8 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/pterm/pterm"
+
 	"github.com/jbenzshawel/playlist-generator/internal/app"
 )
 
@@ -20,20 +22,28 @@ func main() {
 	intervalFlag := flag.Int("interval", 60, "the interval between downloading songs for in minutes (recurring action)")
 	numTracksFlag := flag.Int("numTracks", 50, "the number of random tracks to include in the random tracks playlist (random action)")
 	songSourceFlag := flag.String("source", "", "the source type to download songs from. If none specified all sources will be synced")
-	verboseFlag := flag.Bool("verbose", false, "include detailed logs")
+	verboseFlag := flag.Bool("verbose", false, "include detailed logs (human readable format when false)")
 
 	flag.Parse()
 
+	var outputMode app.OutputMode
 	if *verboseFlag {
+		outputMode = app.MachineOutputMode
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	} else {
-		slog.SetLogLoggerLevel(slog.LevelInfo)
+		outputMode = app.HumanOutputMode
+		logger := &pterm.DefaultLogger
+		logger.Level = pterm.LogLevelError
+
+		handler := pterm.NewSlogHandler(&pterm.DefaultLogger)
+
+		slog.SetDefault(slog.New(handler))
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer stop()
 
-	application, closer := app.NewApplication(ctx)
+	application, closer := app.NewApplication(ctx, outputMode)
 	defer closer()
 
 	select {
