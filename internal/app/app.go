@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"os/exec"
 	"strconv"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/jbenzshawel/playlist-generator/internal/clients/spinitronclient"
 	"github.com/jbenzshawel/playlist-generator/internal/clients/spotifyclient"
 	"github.com/jbenzshawel/playlist-generator/internal/clients/studiooneclient"
+	"github.com/jbenzshawel/playlist-generator/internal/common/output"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 	"github.com/jbenzshawel/playlist-generator/internal/httpclient/oauth"
 	"github.com/jbenzshawel/playlist-generator/internal/playlists"
@@ -37,10 +39,10 @@ type Application struct {
 	Sources   sources.Commands
 	Playlists playlists.Commands
 
-	outputMode OutputMode
+	output output.Output
 }
 
-func NewApplication(ctx context.Context, outputMode OutputMode) (Application, func()) {
+func NewApplication(ctx context.Context, outputMode output.Mode) (Application, func()) {
 	cfg, err := config.Load()
 	if err != nil {
 		panic(fmt.Errorf("failed to load config: %w", err))
@@ -85,9 +87,9 @@ func NewApplication(ctx context.Context, outputMode OutputMode) (Application, fu
 	})
 
 	return Application{
-		Sources:    sources.NewCommands(iprClient, spinClient, repository),
-		Playlists:  playlists.NewCommands(spotifyClient, repository),
-		outputMode: outputMode,
+		Sources:   sources.NewCommands(iprClient, spinClient, repository),
+		Playlists: playlists.NewCommands(spotifyClient, repository),
+		output:    output.New(outputMode),
 	}, closer
 }
 
@@ -115,8 +117,23 @@ func setupSpotifyClient(ctx context.Context, clientConfig config.OAuthClient) *s
 
 	http.HandleFunc("/callback", completeAuthHandler)
 
-	pterm.DefaultBasicText.Println("Click the following URL to complete spotify login:")
-	pterm.DefaultBasicText.Println(loginURL)
+	confirm := pterm.DefaultInteractiveConfirm
+	confirm.DefaultText = "Open spotify auth link in default browser?"
+	confirm.DefaultValue = true
+
+	result, err := confirm.Show()
+	if err != nil {
+		slog.Error("failed to prompt confirmation", slog.Any("error", err))
+	}
+
+	if !result {
+		panic("login with spotify failed")
+	}
+
+	cmd := exec.CommandContext(ctx, "open", loginURL)
+	if err = cmd.Start(); err != nil {
+		panic(fmt.Errorf("failed to open spotify auth link: %w", err))
+	}
 
 	select {
 	case <-ctx.Done():
@@ -185,13 +202,17 @@ func (a Application) Run(ctx context.Context, cfg RunConfig) {
 }
 
 func (a Application) sourcesResults(results []syncDayResult) {
-	pterm.Success.Println("Sync for all sources complete!")
+	pterm.Println("\n" + pterm.LightCyan("Sync for all sources complete. Summary of tracks added:"))
 
 	var tableData [][]string
 	header := []string{"Playlist name", "Description", "Tracks Added", "Total Tracks"}
 
 	tableData = append(tableData, header)
 	for _, r := range results {
+		if r.TracksAdded == 0 {
+			continue
+		}
+
 		tableData = append(tableData, []string{
 			r.PlaylistName,
 			r.SourceType.Description(),
@@ -200,5 +221,5 @@ func (a Application) sourcesResults(results []syncDayResult) {
 		})
 	}
 
-	a.outputTable(tableData)
+	a.output.Table(tableData)
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/pterm/pterm"
 
 	"github.com/jbenzshawel/playlist-generator/internal/app"
+	"github.com/jbenzshawel/playlist-generator/internal/common/output"
 )
 
 func main() {
@@ -26,12 +27,12 @@ func main() {
 
 	flag.Parse()
 
-	var outputMode app.OutputMode
+	var outputMode output.Mode
 	if *verboseFlag {
-		outputMode = app.MachineOutputMode
+		outputMode = output.MachineMode
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	} else {
-		outputMode = app.HumanOutputMode
+		outputMode = output.HumanMode
 		logger := &pterm.DefaultLogger
 		logger.Level = pterm.LogLevelError
 

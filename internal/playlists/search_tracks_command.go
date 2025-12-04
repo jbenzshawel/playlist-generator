@@ -9,12 +9,13 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/jbenzshawel/playlist-generator/internal/common/decorator"
+	"github.com/jbenzshawel/playlist-generator/internal/common/output"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 	"github.com/jbenzshawel/playlist-generator/internal/playlists/services"
 )
 
 type SearchTracksCommand struct {
-	Progress func(message string, total int) func()
+	Progress output.ProgressBarCreator
 }
 
 type SearchTracksCommandResult struct {
@@ -46,6 +47,10 @@ func (t *searchTracksCommandHandler) Execute(ctx context.Context, cmd SearchTrac
 	}
 
 	slog.Info("found unknown songs to search", slog.Int("numSongs", len(songs)))
+
+	if len(songs) == 0 {
+		return SearchTracksCommandResult{UnknownCount: 0, MatchedCount: 0}, nil
+	}
 
 	g, gCtx := errgroup.WithContext(ctx)
 

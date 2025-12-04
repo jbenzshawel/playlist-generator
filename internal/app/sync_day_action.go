@@ -23,7 +23,7 @@ func (a Application) syncDayAction(ctx context.Context, sourceType domain.Source
 		slog.String("source", sourceType.String()),
 	)
 
-	a.outputSection("Updating %s (%s) playlist for songs played on %s:", sourceType.String(), sourceType.Description(), date)
+	a.output.Section("Updating %s (%s) playlist for songs played on %s:", sourceType.String(), sourceType.Description(), date)
 
 	listRes, err := a.Sources.ListSongs.Execute(ctx, sources.SourceSongListCommand{
 		SourceType: sourceType,
@@ -33,9 +33,9 @@ func (a Application) syncDayAction(ctx context.Context, sourceType domain.Source
 		return syncDayResult{}, fmt.Errorf("%s song list error: %w", sourceType, err)
 	}
 
-	a.outputInfo("%d songs found", listRes.FoundCount)
+	a.output.Info("%d songs found", listRes.FoundCount)
 
-	progressBar := a.outputCreateProgressBar()
+	progressBar := a.output.NewProgressBarCreator()
 
 	searchRes, err := a.Playlists.SearchTracks.Execute(ctx, playlists.SearchTracksCommand{
 		Progress: progressBar,
@@ -44,7 +44,7 @@ func (a Application) syncDayAction(ctx context.Context, sourceType domain.Source
 		return syncDayResult{}, fmt.Errorf("spotify track update error: %w", err)
 	}
 
-	a.outputInfo("%d matches found on spotify (%d new songs searched)", searchRes.MatchedCount, searchRes.UnknownCount)
+	a.output.Info("%d matches found on spotify (%d new songs searched)", searchRes.MatchedCount, searchRes.UnknownCount)
 
 	createRes, err := a.Playlists.CreatePlaylist.Execute(ctx, playlists.CreatePlaylistCommand{
 		Date:       date,
@@ -54,7 +54,7 @@ func (a Application) syncDayAction(ctx context.Context, sourceType domain.Source
 		return syncDayResult{}, fmt.Errorf("create spotify playlist error: %w", err)
 	}
 
-	a.outputInfo("%s playlist retrieved", createRes.Playlist.Name())
+	a.output.Info("%s playlist retrieved", createRes.Playlist.Name())
 
 	syncRes, err := a.Playlists.SyncPlaylist.Execute(ctx, playlists.SyncPlaylistCommand{
 		Playlist:   createRes.Playlist,
@@ -65,9 +65,9 @@ func (a Application) syncDayAction(ctx context.Context, sourceType domain.Source
 		return syncDayResult{}, fmt.Errorf("sync spotify playlist error: %w", err)
 	}
 
-	a.outputInfo("%d new tracks added", syncRes.NewTracks)
+	a.output.Info("%d new tracks added", syncRes.NewTracks)
 
-	a.outputSuccess("%s sync complete!", sourceType.String())
+	a.output.Success("%s sync complete!", sourceType.String())
 
 	return syncDayResult{
 		SourceType:   sourceType,
