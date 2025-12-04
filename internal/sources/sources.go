@@ -41,16 +41,16 @@ type SourceSongListCommand struct {
 	Date       string
 }
 
-type SongListCommandHandler decorator.CommandHandler[SourceSongListCommand]
+type SongListCommandHandler decorator.CommandWithResultHandler[SourceSongListCommand, internal.SongListCommandResult]
 
 type songListCommand struct {
 	commands map[domain.SourceType]internal.SongListCommandHandler
 }
 
-func (c *songListCommand) Execute(ctx context.Context, cmd SourceSongListCommand) (any, error) {
+func (c *songListCommand) Execute(ctx context.Context, cmd SourceSongListCommand) (internal.SongListCommandResult, error) {
 	command, ok := c.commands[cmd.SourceType]
 	if !ok {
-		return nil, fmt.Errorf("source type %s not supported", cmd.SourceType)
+		return internal.SongListCommandResult{}, fmt.Errorf("source type %s not supported", cmd.SourceType)
 	}
 
 	return command.Execute(ctx, internal.SongListCommand{

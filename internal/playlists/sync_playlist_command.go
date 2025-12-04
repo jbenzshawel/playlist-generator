@@ -17,7 +17,12 @@ type SyncPlaylistCommand struct {
 	Date       string
 }
 
-type SyncPlaylistCommandHandler decorator.CommandHandler[SyncPlaylistCommand]
+type SyncPlaylistCommandResult struct {
+	TotalTracks int
+	NewTracks   int
+}
+
+type SyncPlaylistCommandHandler decorator.CommandWithResultHandler[SyncPlaylistCommand, SyncPlaylistCommandResult]
 
 func NewSyncPlaylistCommand(
 	playlistService services.PlaylistService,
@@ -43,7 +48,7 @@ type syncPlaylistCommandHandler struct {
 	trackRepository    domain.SpotifyTrackRepository
 }
 
-func (c *syncPlaylistCommandHandler) Execute(ctx context.Context, cmd SyncPlaylistCommand) (any, error) {
+func (c *syncPlaylistCommandHandler) Execute(ctx context.Context, cmd SyncPlaylistCommand) (SyncPlaylistCommandResult, error) {
 	startDate := cmd.Playlist.LastDaySynced()
 	if startDate == "" || cmd.Date < cmd.Playlist.LastDaySynced() {
 		startDate = cmd.Playlist.StartDate()
@@ -51,21 +56,21 @@ func (c *syncPlaylistCommandHandler) Execute(ctx context.Context, cmd SyncPlayli
 
 	endDate, err := cmd.Playlist.EndDate()
 	if err != nil {
-		return nil, err
+		return SyncPlaylistCommandResult{}, err
 	}
 
 	tracks, err := c.trackRepository.GetTracksPlayedInRange(ctx, cmd.SourceType, startDate, endDate)
 	if err != nil {
-		return nil, err
+		return SyncPlaylistCommandResult{}, err
 	}
 
 	if len(tracks) == 0 {
 		slog.Info("no new downloaded tracks to sync")
 	}
 
-	trackURIs, err := c.getTrackURIs(ctx, cmd.Playlist, tracks)
+	trackURIs, playlistTotal, err := c.getTrackURIs(ctx, cmd.Playlist, tracks)
 	if err != nil {
-		return nil, err
+		return SyncPlaylistCommandResult{}, err
 	}
 
 	if len(trackURIs) == 0 {
@@ -74,25 +79,25 @@ func (c *syncPlaylistCommandHandler) Execute(ctx context.Context, cmd SyncPlayli
 
 	err = c.playlistService.AddTracks(ctx, cmd.Playlist.ID(), trackURIs)
 	if err != nil {
-		return nil, err
+		return SyncPlaylistCommandResult{}, err
 	}
 
 	// Set last date synced to yesterday since we want to pick up other songs from today
 	syncDate := time.Now().AddDate(0, 0, -1).Format(time.DateOnly)
 	err = c.playlistRepository.SetLastDaySynced(ctx, cmd.Playlist.ID(), syncDate)
 	if err != nil {
-		return nil, err
+		return SyncPlaylistCommandResult{}, err
 	}
 
 	slog.Info("tracks sync complete", slog.Int("numTracks", len(trackURIs)))
 
-	return nil, nil
+	return SyncPlaylistCommandResult{TotalTracks: playlistTotal, NewTracks: len(trackURIs)}, nil
 }
 
-func (c *syncPlaylistCommandHandler) getTrackURIs(ctx context.Context, p domain.Playlist, tracks []domain.SpotifyTrack) ([]string, error) {
+func (c *syncPlaylistCommandHandler) getTrackURIs(ctx context.Context, p domain.Playlist, tracks []domain.SpotifyTrack) ([]string, int, error) {
 	playlistTracks, err := c.playlistService.GetTracks(ctx, p.ID())
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	trackLookup := make(map[string]struct{}, len(playlistTracks))
@@ -106,5 +111,5 @@ func (c *syncPlaylistCommandHandler) getTrackURIs(ctx context.Context, p domain.
 			trackURIs = append(trackURIs, track.URI())
 		}
 	}
-	return trackURIs, nil
+	return trackURIs, len(playlistTracks), nil
 }

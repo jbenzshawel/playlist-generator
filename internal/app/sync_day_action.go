@@ -10,41 +10,69 @@ import (
 	"github.com/jbenzshawel/playlist-generator/internal/sources"
 )
 
-func (a Application) syncDayAction(ctx context.Context, sourceType domain.SourceType, date string) error {
+type syncDayResult struct {
+	SourceType   domain.SourceType
+	PlaylistName string
+	TotalTracks  int
+	TracksAdded  int
+}
+
+func (a Application) syncDayAction(ctx context.Context, sourceType domain.SourceType, date string) (syncDayResult, error) {
 	slog.Info("adding songs to Spotify playlist",
 		slog.String("date", date),
 		slog.String("source", sourceType.String()),
 	)
 
-	_, err := a.Sources.ListSongs.Execute(ctx, sources.SourceSongListCommand{
+	a.output.Section("Updating %s (%s) playlist for songs played on %s:", sourceType.String(), sourceType.Description(), date)
+
+	listRes, err := a.Sources.ListSongs.Execute(ctx, sources.SourceSongListCommand{
 		SourceType: sourceType,
 		Date:       date,
 	})
 	if err != nil {
-		return fmt.Errorf("%s song list error: %w", sourceType, err)
+		return syncDayResult{}, fmt.Errorf("%s song list error: %w", sourceType, err)
 	}
 
-	_, err = a.Playlists.SearchTracks.Execute(ctx, playlists.SearchTracksCommand{})
+	a.output.Info("%d songs found", listRes.FoundCount)
+
+	progressBar := a.output.NewProgressBarCreator()
+
+	searchRes, err := a.Playlists.SearchTracks.Execute(ctx, playlists.SearchTracksCommand{
+		Progress: progressBar,
+	})
 	if err != nil {
-		return fmt.Errorf("spotify track update error: %w", err)
+		return syncDayResult{}, fmt.Errorf("spotify track update error: %w", err)
 	}
+
+	a.output.Info("%d matches found on spotify (%d new songs searched)", searchRes.MatchedCount, searchRes.UnknownCount)
 
 	createRes, err := a.Playlists.CreatePlaylist.Execute(ctx, playlists.CreatePlaylistCommand{
 		Date:       date,
 		SourceType: sourceType,
 	})
 	if err != nil {
-		return fmt.Errorf("create spotify playlist error: %w", err)
+		return syncDayResult{}, fmt.Errorf("create spotify playlist error: %w", err)
 	}
 
-	_, err = a.Playlists.SyncPlaylist.Execute(ctx, playlists.SyncPlaylistCommand{
+	a.output.Info("%s playlist retrieved", createRes.Playlist.Name())
+
+	syncRes, err := a.Playlists.SyncPlaylist.Execute(ctx, playlists.SyncPlaylistCommand{
 		Playlist:   createRes.Playlist,
 		SourceType: sourceType,
 		Date:       date,
 	})
 	if err != nil {
-		return fmt.Errorf("sync spotify playlist error: %w", err)
+		return syncDayResult{}, fmt.Errorf("sync spotify playlist error: %w", err)
 	}
 
-	return err
+	a.output.Info("%d new tracks added", syncRes.NewTracks)
+
+	a.output.Success("%s sync complete!", sourceType.String())
+
+	return syncDayResult{
+		SourceType:   sourceType,
+		PlaylistName: createRes.Playlist.Name(),
+		TotalTracks:  syncRes.TotalTracks,
+		TracksAdded:  syncRes.NewTracks,
+	}, nil
 }

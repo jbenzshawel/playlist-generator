@@ -4,17 +4,26 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sync/atomic"
 
 	"golang.org/x/sync/errgroup"
 
 	"github.com/jbenzshawel/playlist-generator/internal/common/decorator"
+	"github.com/jbenzshawel/playlist-generator/internal/common/output"
 	"github.com/jbenzshawel/playlist-generator/internal/domain"
 	"github.com/jbenzshawel/playlist-generator/internal/playlists/services"
 )
 
-type SearchTracksCommand struct{}
+type SearchTracksCommand struct {
+	Progress output.ProgressBarCreator
+}
 
-type SearchTracksCommandHandler decorator.CommandHandler[SearchTracksCommand]
+type SearchTracksCommandResult struct {
+	UnknownCount int
+	MatchedCount int
+}
+
+type SearchTracksCommandHandler decorator.CommandWithResultHandler[SearchTracksCommand, SearchTracksCommandResult]
 
 func NewSearchTracksCommand(searchService services.SearchService, repository domain.Repository) SearchTracksCommandHandler {
 	return decorator.ApplyDBTransactionDecorator(
@@ -31,17 +40,26 @@ type searchTracksCommandHandler struct {
 	repository    domain.SpotifyTrackRepository
 }
 
-func (t *searchTracksCommandHandler) Execute(ctx context.Context, _ SearchTracksCommand) (any, error) {
+func (t *searchTracksCommandHandler) Execute(ctx context.Context, cmd SearchTracksCommand) (SearchTracksCommandResult, error) {
 	songs, err := t.repository.GetUnknownSongs(ctx)
 	if err != nil {
-		return nil, err
+		return SearchTracksCommandResult{}, err
 	}
 
 	slog.Info("found unknown songs to search", slog.Int("numSongs", len(songs)))
 
+	if len(songs) == 0 {
+		return SearchTracksCommandResult{UnknownCount: 0, MatchedCount: 0}, nil
+	}
+
 	g, gCtx := errgroup.WithContext(ctx)
 
 	g.SetLimit(6)
+	total := len(songs)
+
+	incProgress := cmd.Progress("Searching songs on Spotify", total)
+
+	matchCount := atomic.Int32{}
 
 	for idx := 0; idx < len(songs); idx++ {
 		g.Go(func() error {
@@ -73,6 +91,12 @@ func (t *searchTracksCommandHandler) Execute(ctx context.Context, _ SearchTracks
 					return fmt.Errorf("spotify track insert error: %w", err)
 				}
 
+				if track.MatchFound() {
+					matchCount.Add(1)
+				}
+
+				incProgress()
+
 				return nil
 			}
 		})
@@ -80,8 +104,8 @@ func (t *searchTracksCommandHandler) Execute(ctx context.Context, _ SearchTracks
 
 	err = g.Wait()
 	if err != nil {
-		return nil, err
+		return SearchTracksCommandResult{}, err
 	}
 
-	return nil, nil
+	return SearchTracksCommandResult{UnknownCount: total, MatchedCount: int(matchCount.Load())}, nil
 }
