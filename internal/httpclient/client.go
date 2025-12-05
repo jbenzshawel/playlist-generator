@@ -189,7 +189,7 @@ func (c *client) Do(req *http.Request) (*http.Response, error) {
 	for attempt := 0; attempt < c.maxRetries; attempt++ {
 		if c.rateLimit.Limited() {
 			// if the circuit is open due to being rate limited
-			// wait until the time after elapsed before continuing
+			// wait until the time after has elapsed before continuing
 			c.rateLimit.WaitTimeAfter(req.Context())
 		}
 
