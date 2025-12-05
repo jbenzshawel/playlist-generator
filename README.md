@@ -24,20 +24,20 @@ The tool's database keeps track of all tracks downloaded from each source, and p
 songs. 
 
 
-| Flag           | Default      | Description                                                                                                                                                                                                                      |
-|----------------|--------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `action`       | `syncDay`    | The action (see above for details)                                                                                                                                                                                               | 
-| `date`         | current date | The date to download songs for in YYYY-MM-DD. This option is only used with the syncDay action.                                                                                                                                  |
-| `month`        |              | The month to download songs for in YYYY-MM. This option is only used with the syncMonth action.                                                                                                                                  |
-| `interval`     | 60           | The interval, in minutes, between updating the playlist. This option is only used with the recurring action.                                                                                                                     |
-| `numTracks`    | 50           | The number of random tracks to include in the random tracks playlist. This option is only used with the random action.                                                                                                           |
-| `source`       |              | The source to download songs from. If none specified all sources will be synced.                                                                                                                                                 | 
-| `verbose`      | `false`      | When true all log information is written to stdout instead of the summary and progress information. This option is intended for use when deployed and running in recurring mode, however may also be useful for troubleshooting. | 
+| Flag           | Default      | Description                                                                                                                                                                                                                         |
+|----------------|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `action`       | `syncDay`    | The action (see above for details)                                                                                                                                                                                                  | 
+| `date`         | current date | The date to download songs for in YYYY-MM-DD. This option is only used with the syncDay action.                                                                                                                                     |
+| `month`        |              | The month to download songs for in YYYY-MM. This option is only used with the syncMonth action.                                                                                                                                     |
+| `interval`     | 60           | The interval, in minutes, between updating the playlist. This option is only used with the recurring action.                                                                                                                        |
+| `numTracks`    | 50           | The number of random tracks to include in the random tracks playlist. This option is only used with the random action.                                                                                                              |
+| `source`       |              | The source to download songs from. If none specified all sources will be synced.                                                                                                                                                    | 
+| `verbose`      | `false`      | When true all log information is written to stdout instead of the summary and progress information. This option is intended for use when deployed and running in recurring mode, however it may also be useful for troubleshooting. | 
 
 ### Example
 The tool can be run with the following command:
 ```
-./playlist-generator -action=syncDay
+./playlist-generator -action=syncDay -source=krui
 ```
 
 ### Authentication 
