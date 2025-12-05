@@ -11,9 +11,8 @@ import (
 func (a Application) randomAction(ctx context.Context, numTracks int) error {
 	slog.Info("updating random playlist with new randomAction tracks", slog.Int("numTracks", numTracks))
 
-	done := a.output.Spinner(
+	done := a.output.SuccessSpinner(
 		fmt.Sprintf("Updating Random Radio Playlist with %d new tracks", numTracks),
-		fmt.Sprintf("Random Radio Playlist updated with %d new tracks!", numTracks),
 	)
 
 	_, err := a.Playlists.RandomTracksPlaylist.Execute(ctx, playlists.RandomTracksPlaylistCommand{
@@ -23,7 +22,9 @@ func (a Application) randomAction(ctx context.Context, numTracks int) error {
 		return err
 	}
 
-	done()
+	done(
+		fmt.Sprintf("Random Radio Playlist updated with %d new tracks!", numTracks),
+	)
 
 	return nil
 }

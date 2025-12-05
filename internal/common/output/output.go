@@ -29,7 +29,8 @@ type Output interface {
 	Info(message string, args ...interface{})
 	Success(message string, args ...interface{})
 	NewProgressBarCreator() ProgressBarCreator
-	Spinner(startMessage, doneMessage string) func()
+	SuccessSpinner(startMessage string) func(doneMessage string)
+	InfoSpinner(startMessage string) func(doneMessage string)
 	Table(tableData [][]string)
 }
 
@@ -59,29 +60,55 @@ func (o humanOutput) Success(message string, args ...interface{}) {
 	pterm.Success.Printfln(message, args...)
 }
 
-type ProgressBarCreator func(message string, total int) func()
+type ProgressBarCreator func(message string, total int) *ProgressTracker
 
-func (o humanOutput) NewProgressBarCreator() ProgressBarCreator {
-	return func(message string, total int) func() {
-		p, err := pterm.DefaultProgressbar.WithTotal(total).WithTitle(message).Start()
-		if err != nil {
-			slog.Error("error creating progress bar", slog.Any("error", err))
-			return func() {}
-		}
+type ProgressTracker struct {
+	mu      sync.Mutex
+	printer *pterm.ProgressbarPrinter
+}
 
-		mu := sync.Mutex{}
-		return func() {
-			mu.Lock()
-			p.Increment()
-			mu.Unlock()
-		}
+func (p *ProgressTracker) Increment() {
+	if p.printer == nil {
+		return
+	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.printer.Increment()
+}
+func (p *ProgressTracker) Stop() {
+	if p.printer == nil {
+		return
+	}
+
+	if p.printer.IsActive {
+		p.Stop()
 	}
 }
 
-func (o humanOutput) Spinner(startMessage, doneMessage string) func() {
+func (o humanOutput) NewProgressBarCreator() ProgressBarCreator {
+	return func(message string, total int) *ProgressTracker {
+		p, err := pterm.DefaultProgressbar.WithTotal(total).WithTitle(message).Start()
+		if err != nil {
+			slog.Error("error creating progress bar", slog.Any("error", err))
+			return nil
+		}
+
+		return &ProgressTracker{printer: p}
+	}
+}
+
+func (o humanOutput) SuccessSpinner(startMessage string) func(string) {
 	spinnerInfo, _ := pterm.DefaultSpinner.Start(startMessage)
-	return func() {
+	return func(doneMessage string) {
 		spinnerInfo.Success(doneMessage)
+	}
+}
+
+func (o humanOutput) InfoSpinner(startMessage string) func(string) {
+	spinnerInfo, _ := pterm.DefaultSpinner.Start(startMessage)
+	return func(doneMessage string) {
+		spinnerInfo.Info(doneMessage)
 	}
 }
 
@@ -111,13 +138,17 @@ func (n noopOutput) Success(_ string, _ ...interface{}) {
 }
 
 func (n noopOutput) NewProgressBarCreator() ProgressBarCreator {
-	return func(_ string, _ int) func() {
-		return func() {}
+	return func(_ string, _ int) *ProgressTracker {
+		return &ProgressTracker{}
 	}
 }
 
-func (n noopOutput) Spinner(_, _ string) func() {
-	return func() {}
+func (n noopOutput) SuccessSpinner(_ string) func(string) {
+	return func(string) {}
+}
+
+func (n noopOutput) InfoSpinner(_ string) func(string) {
+	return func(string) {}
 }
 
 func (n noopOutput) Table(_ [][]string) {

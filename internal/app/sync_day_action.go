@@ -25,6 +25,8 @@ func (a Application) syncDayAction(ctx context.Context, sourceType domain.Source
 
 	a.output.Section("Updating %s (%s) playlist for songs played on %s:", sourceType.String(), sourceType.Description(), date)
 
+	lookupDone := a.output.InfoSpinner("Looking up songs...")
+
 	listRes, err := a.Sources.ListSongs.Execute(ctx, sources.SourceSongListCommand{
 		SourceType: sourceType,
 		Date:       date,
@@ -33,7 +35,7 @@ func (a Application) syncDayAction(ctx context.Context, sourceType domain.Source
 		return syncDayResult{}, fmt.Errorf("%s song list error: %w", sourceType, err)
 	}
 
-	a.output.Info("%d songs found", listRes.FoundCount)
+	lookupDone(fmt.Sprintf("%d songs found", listRes.FoundCount))
 
 	progressBar := a.output.NewProgressBarCreator()
 
@@ -56,6 +58,8 @@ func (a Application) syncDayAction(ctx context.Context, sourceType domain.Source
 
 	a.output.Info("%s playlist retrieved", createRes.Playlist.Name())
 
+	syncDone := a.output.InfoSpinner("Adding new tracks to playlist...")
+
 	syncRes, err := a.Playlists.SyncPlaylist.Execute(ctx, playlists.SyncPlaylistCommand{
 		Playlist:   createRes.Playlist,
 		SourceType: sourceType,
@@ -65,7 +69,7 @@ func (a Application) syncDayAction(ctx context.Context, sourceType domain.Source
 		return syncDayResult{}, fmt.Errorf("sync spotify playlist error: %w", err)
 	}
 
-	a.output.Info("%d new tracks added", syncRes.NewTracks)
+	syncDone(fmt.Sprintf("%d new tracks added", syncRes.NewTracks))
 
 	a.output.Success("%s sync complete!", sourceType.String())
 

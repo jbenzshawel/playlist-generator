@@ -57,7 +57,8 @@ func (t *searchTracksCommandHandler) Execute(ctx context.Context, cmd SearchTrac
 	g.SetLimit(6)
 	total := len(songs)
 
-	incProgress := cmd.Progress("Searching songs on Spotify", total)
+	tracker := cmd.Progress("Searching songs on Spotify", total)
+	defer tracker.Stop()
 
 	matchCount := atomic.Int32{}
 
@@ -95,7 +96,7 @@ func (t *searchTracksCommandHandler) Execute(ctx context.Context, cmd SearchTrac
 					matchCount.Add(1)
 				}
 
-				incProgress()
+				tracker.Increment()
 
 				return nil
 			}
