@@ -6,6 +6,7 @@ package output
 import (
 	"fmt"
 	"log/slog"
+	"sync"
 
 	"github.com/pterm/pterm"
 )
@@ -68,8 +69,11 @@ func (o humanOutput) NewProgressBarCreator() ProgressBarCreator {
 			return func() {}
 		}
 
+		mu := sync.Mutex{}
 		return func() {
+			mu.Lock()
 			p.Increment()
+			mu.Unlock()
 		}
 	}
 }

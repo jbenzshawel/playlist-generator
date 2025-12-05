@@ -184,8 +184,8 @@ func (a Application) Run(ctx context.Context, cfg RunConfig) {
 			}
 			results = append(results, res)
 		}
-		if len(results) > 0 {
-			a.sourcesResults(results)
+		if len(results) > 1 {
+			a.outputSourcesSyncSummary(results)
 		}
 	case SyncMonthAction:
 		a.syncMonthAction(ctx, cfg.Month)
@@ -201,7 +201,7 @@ func (a Application) Run(ctx context.Context, cfg RunConfig) {
 	}
 }
 
-func (a Application) sourcesResults(results []syncDayResult) {
+func (a Application) outputSourcesSyncSummary(results []syncDayResult) {
 	a.output.Println("\n" + pterm.LightCyan("Sync for all sources complete. Summary of tracks added:"))
 
 	var tableData [][]string
