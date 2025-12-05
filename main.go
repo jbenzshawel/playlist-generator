@@ -36,7 +36,7 @@ func main() {
 		logger := &pterm.DefaultLogger
 		logger.Level = pterm.LogLevelError
 
-		handler := pterm.NewSlogHandler(&pterm.DefaultLogger)
+		handler := pterm.NewSlogHandler(logger)
 
 		slog.SetDefault(slog.New(handler))
 	}
