@@ -12,31 +12,32 @@ In the future additional playlist time range scopes may be added.
 
 ### Options
 The playlist generator currently supports the following actions `syncDay`, `syncMonth`, `recurring`, and `random`. 
-* The `syncDay` action in combination with the `date` option can be used to update a playlist with songs 
+* The `syncDay` action in combination with the `date` flag can be used to update a playlist with songs 
 played on a specific date. 
 * The `syncMonth` action in combination with the `month` flag will create a playlist with all songs played from a source in the given month.
-Note this action is only supported with the studioOne `source`.
+Note this action is only supported with the `studioOne` `source`.
 * The `recurring` action can be used to run the tool in the background to add songs played from a source in real time. For 
 example, if the interval is set to `5` minutes the sources playlist for the current month will be updated every five 
 minutes with the most recent song(s) played. 
-* The `random` action will reset the "Random Radio" playlist to have a random number of tracks pulled from the studio one
-source. The tool's database keeps track of all tracks downloaded from a source. 
+* The `random` action will reset the "Random Radio" playlist to have a random number of tracks pulled from all sources. 
+The tool's database keeps track of all tracks downloaded from each source, and pulls a random selection from the indexed 
+songs. 
 
 
-| Flag           | Default      | Description                                                                                                                                                    |
-|----------------|--------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `action`       | syncDay      | The action (see above for details)                                                                                                                             | 
-| `date`         | current date | The date to download songs for in YYYY-MM-DD. This option is only used with the syncDay action.                                                                |
-| `month`        |              | The month to download songs for in YYYY-MM. This option is only used with the syncMonth action.                                                                |
-| `interval`     | 60           | The interval, in minutes, between updating the playlist. This option is only used with the recurring action.                                                   |
-| `numTracks`    | 50           | The number of random tracks to include in the random tracks playlist. This option is only used with the random action.                                         |
-| `source`       |              | The source to download songs from. If none specified all sources will be synced.                                                                               | 
-| `verbose`      | false        | Whether to include detailed logs. This option is intended for use when deployed and running in recurring mode, however may also be useful for troubleshooting. | 
+| Flag           | Default      | Description                                                                                                                                                                                                                      |
+|----------------|--------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `action`       | `syncDay`    | The action (see above for details)                                                                                                                                                                                               | 
+| `date`         | current date | The date to download songs for in YYYY-MM-DD. This option is only used with the syncDay action.                                                                                                                                  |
+| `month`        |              | The month to download songs for in YYYY-MM. This option is only used with the syncMonth action.                                                                                                                                  |
+| `interval`     | 60           | The interval, in minutes, between updating the playlist. This option is only used with the recurring action.                                                                                                                     |
+| `numTracks`    | 50           | The number of random tracks to include in the random tracks playlist. This option is only used with the random action.                                                                                                           |
+| `source`       |              | The source to download songs from. If none specified all sources will be synced.                                                                                                                                                 | 
+| `verbose`      | `false`      | When true all log information is written to stdout instead of the summary and progress information. This option is intended for use when deployed and running in recurring mode, however may also be useful for troubleshooting. | 
 
 ### Example
 The tool can be run with the following command:
 ```
-./playlist-generator -date=2025-10-28
+./playlist-generator -action=syncDay
 ```
 
 ### Authentication 
