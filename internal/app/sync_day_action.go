@@ -46,7 +46,7 @@ func (a Application) syncDayAction(ctx context.Context, sourceType domain.Source
 		return syncDayResult{}, fmt.Errorf("spotify track update error: %w", err)
 	}
 
-	a.output.Info("%d matches found on spotify (%d new songs searched)", searchRes.MatchedCount, searchRes.UnknownCount)
+	a.output.Info("%d matches found on Spotify (%d new songs searched)", searchRes.MatchedCount, searchRes.UnknownCount)
 
 	createRes, err := a.Playlists.CreatePlaylist.Execute(ctx, playlists.CreatePlaylistCommand{
 		Date:       date,
