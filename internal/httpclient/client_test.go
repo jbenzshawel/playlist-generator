@@ -17,7 +17,7 @@ import (
 	"github.com/jbenzshawel/playlist-generator/internal/httpclient/ratelimit"
 )
 
-func TestRetryingClient_Do_RateLimited(t *testing.T) {
+func TestClient_Do_RateLimited(t *testing.T) {
 	t.Parallel()
 
 	const (
@@ -79,7 +79,7 @@ func TestRetryingClient_Do_RateLimited(t *testing.T) {
 	assert.Greater(t, rateLimitCount.Load(), int32(reqLimit))
 }
 
-func TestRetryingClient_Do_ClientLimiter_RateLimited(t *testing.T) {
+func TestClient_Do_ClientLimiter_RateLimited(t *testing.T) {
 	t.Parallel()
 
 	const (
@@ -146,7 +146,7 @@ func TestRetryingClient_Do_ClientLimiter_RateLimited(t *testing.T) {
 	assert.Less(t, rateLimitCount.Load(), int32(reqLimit))
 }
 
-func TestRetryingClient_Do_ClientLimiter(t *testing.T) {
+func TestClient_Do_ClientLimiter(t *testing.T) {
 	t.Parallel()
 
 	const (
@@ -203,4 +203,21 @@ func sleep(ctx context.Context, duration time.Duration) {
 	case <-ctx.Done():
 	case <-time.After(duration):
 	}
+}
+
+func TestClient_MaxRetries(t *testing.T) {
+	t.Parallel()
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer ts.Close()
+
+	c := NewClient(Config{})
+
+	req, err := http.NewRequestWithContext(t.Context(), "GET", ts.URL, nil)
+	require.NoError(t, err)
+
+	_, err = c.Do(req)
+	assert.ErrorIs(t, err, ErrMaxRetriesExceeded)
 }

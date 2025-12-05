@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"log/slog"
 	"math"
 	"math/rand/v2"
@@ -14,6 +14,10 @@ import (
 	"time"
 
 	"github.com/jbenzshawel/playlist-generator/internal/httpclient/ratelimit"
+)
+
+var (
+	ErrMaxRetriesExceeded = errors.New("http request failed after max retries")
 )
 
 const (
@@ -212,7 +216,8 @@ func (c *client) Do(req *http.Request) (*http.Response, error) {
 		// close the response if we're retrying
 		resp.Body.Close()
 
-		if resp.StatusCode == http.StatusTooManyRequests {
+		switch {
+		case isTooManyRequests(resp.StatusCode):
 			wait = getRetryAfter(resp, wait)
 			slog.Warn("http request failed with too many requests",
 				slog.Int("attempt", attempt),
@@ -221,21 +226,20 @@ func (c *client) Do(req *http.Request) (*http.Response, error) {
 			)
 			c.sleep(req.Context(), wait, true)
 			continue
-		}
-
-		if resp.StatusCode >= http.StatusInternalServerError && resp.StatusCode != http.StatusNotImplemented {
+		case isRetryableServerError(resp.StatusCode):
 			slog.Warn("http request failed with internal server error",
 				slog.Int("attempt", attempt),
-				slog.Int("wait", int(wait)),
+				slog.Int("wait", int(wait.Seconds())),
 			)
 			c.sleep(req.Context(), wait, false)
 			continue
 		}
 
 		return resp, nil
+
 	}
 
-	return nil, fmt.Errorf("http request failed after max retries %d", c.maxRetries)
+	return nil, ErrMaxRetriesExceeded
 }
 
 func (c *client) defaultWaitStrategy(attempt int) time.Duration {
@@ -276,6 +280,13 @@ func getRetryAfter(resp *http.Response, defaultWait time.Duration) time.Duration
 }
 
 func shouldRetry(statusCode int) bool {
-	return statusCode == http.StatusTooManyRequests ||
-		(statusCode > http.StatusInternalServerError && statusCode != http.StatusNotImplemented)
+	return isTooManyRequests(statusCode) || isRetryableServerError(statusCode)
+}
+
+func isTooManyRequests(statusCode int) bool {
+	return statusCode == http.StatusTooManyRequests
+}
+
+func isRetryableServerError(statusCode int) bool {
+	return statusCode >= http.StatusInternalServerError && statusCode != http.StatusNotImplemented
 }
